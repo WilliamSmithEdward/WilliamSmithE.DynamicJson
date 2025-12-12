@@ -1,42 +1,15 @@
-﻿using System.Dynamic;
-using System.Reflection;
+﻿using System.Reflection;
 
 namespace WilliamSmithE.DynamicJson
 {
-    public class SafeDynamicObject(IDictionary<string, object?> values) : DynamicObject
+    public static class SafeDynamicObjectCastingExtensions
     {
-        private readonly IDictionary<string, object?> values = values ?? throw new ArgumentNullException(nameof(values));
-        public IReadOnlyDictionary<string, object?> Properties =>
-            values as IReadOnlyDictionary<string, object?>
-            ?? throw new InvalidOperationException("Backing store is not a dictionary.");
-
-        public override bool TryGetMember(GetMemberBinder binder, out object? result)
+        public static T? AsType<T>(this SafeDynamicObject source)
+            where T : class, new()
         {
-            foreach (var kvp in values)
-            {
-                if (kvp.Key.Equals(binder.Name, StringComparison.OrdinalIgnoreCase))
-                {
-                    result = kvp.Value;
-                    return true;
-                }
-            }
+            ArgumentNullException.ThrowIfNull(source);
 
-            result = string.Empty;
-            return true;
-        }
-
-        public override bool TrySetMember(SetMemberBinder binder, object? value)
-        {
-            ArgumentNullException.ThrowIfNull(binder);
-
-            values[binder.Name] = value;
-            return true;
-        }
-
-        public T? AsType<T>() where T : class, new()
-        {
             var result = new T();
-
             var targetProps = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
 
             foreach (var targetProp in targetProps)
@@ -47,7 +20,8 @@ namespace WilliamSmithE.DynamicJson
                     continue;
                 }
 
-                foreach (var kvp in Properties)
+                // Find matching key in the dynamic object's properties (case-insensitive)
+                foreach (var kvp in source.Properties)
                 {
 
                     if (!kvp.Key.Equals(targetProp.Name, StringComparison.OrdinalIgnoreCase))
@@ -81,10 +55,9 @@ namespace WilliamSmithE.DynamicJson
                             targetProp.SetValue(result, converted);
                         }
                     }
-
                     catch
                     {
-                        // best-effort: if conversion fails, just skip this property
+                        // Best-effort: if conversion fails, just skip this property
                     }
 
                     break;
@@ -92,6 +65,22 @@ namespace WilliamSmithE.DynamicJson
             }
 
             return result;
+        }
+
+        public static T? AsType<T>(this object? value)
+        where T : class, new()
+        {
+            if (value is SafeDynamicObject sdo)
+            {
+                return sdo.AsType<T>();
+            }
+
+            if (value is T alreadyTyped)
+            {
+                return alreadyTyped;
+            }
+
+            return null;
         }
     }
 }

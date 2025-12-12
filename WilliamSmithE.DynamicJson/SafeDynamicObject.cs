@@ -1,5 +1,6 @@
 ﻿using System.Dynamic;
 using System.Reflection;
+using System.Text.Json;
 
 namespace WilliamSmithE.DynamicJson
 {
@@ -92,6 +93,23 @@ namespace WilliamSmithE.DynamicJson
             }
 
             return result;
+        }
+
+        public Dictionary<string, object?> ToRawObject()
+        {
+            var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var kvp in Properties)
+            {
+                dict[kvp.Key] = Raw.ToRawValue(kvp.Value);
+            }
+
+            return dict;
+        }
+
+        public string ToJson()
+        {
+            return JsonSerializer.Serialize(ToRawObject());
         }
     }
 }

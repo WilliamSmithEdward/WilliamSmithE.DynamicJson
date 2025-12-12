@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Dynamic;
+using System.Text.Json;
 
 namespace WilliamSmithE.DynamicJson
 {
@@ -93,6 +94,24 @@ namespace WilliamSmithE.DynamicJson
             result = null;
             return false;
         }
+
+        internal List<object?> ToRawArray()
+        {
+            var list = new List<object?>();
+
+            foreach (var item in items)
+            {
+                list.Add(Raw.ToRawValue(item));
+            }
+
+            return list;
+        }
+
+        public string ToJson()
+        {
+            return JsonSerializer.Serialize(ToRawArray());
+        }
+
 
         public IEnumerator<object?> GetEnumerator()
         {

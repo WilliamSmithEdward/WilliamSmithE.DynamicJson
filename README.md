@@ -97,6 +97,22 @@ Console.WriteLine(firstRole.roleName);              // Admin
 
 ---
 
+## 🔢 Value Type Handling in DynamicJson
+
+DynamicJson automatically maps JSON primitives and CLR value types into appropriate .NET types.
+
+### Type Mapping
+
+| JSON / CLR Value      | Resulting DynamicJson Type | Notes |
+|-----------------------|----------------------------|-------|
+| `123`                 | `long` or `double`         | Integers stay `long`; large/float-like values become `double`. |
+| `19.99`               | `double` or `decimal`      | Cast inside LINQ projections. |
+| `\"2025-12-13T00:00Z\"` | `DateTime`               | ISO-like strings auto-parse to `DateTime`. |
+| `true` / `false`      | `bool`                     | Direct mapping. |
+| `null`                | `null`                     | Preserved. |
+
+---
+
 ## 🔍 LINQ works naturally
 
 Use the `.AsEnumerable()` extension method to enable LINQ queries on `DynamicJsonList` objects.
@@ -146,6 +162,24 @@ foreach (var name in names)
 {
     Console.WriteLine(name);
 }
+```
+
+⚠️ Casting Disclaimer:  
+    
+Because `AsEnumerable()` produces `IEnumerable<dynamic>`, **LINQ cannot infer the numeric type automatically**.  
+  
+This means:
+  
+- **You must cast inside projection lambdas** (e.g., for `Sum`, `Average`, `Max`, etc.).
+- **Without casting**, LINQ will default to the `int` overload, which can cause runtime binder errors.
+
+### Accessing Value Types
+
+```csharp
+double price = (double)dynItem.Price;
+long qty = (long)dynItem.Qty;
+bool active = (bool)dynUser.IsActive;
+DateTime ts = (DateTime)dynRecord.Timestamp;
 ```
 
 ## 🎯 Mapping to POCOs
@@ -278,17 +312,65 @@ var adminRoles =
 ## 📘 Example End-to-End
 
 ```csharp
-var dynObj = json.ToDynamic();
+using WilliamSmithE.DynamicJson;
 
-Console.WriteLine(dynObj.profile.roles.First().roleName);
-// Admin
+// JSON comes from outside your system (HTTP, file, DB, etc.)
+var customerJson = """
+{
+  "CustomerId": 42,
+  "Name": "Jane Doe",
+  "Email": "jane@example.com"
+}
+""";
 
-var user = dynObj.AsType<MyClass>();
-Console.WriteLine(user.CreatedDate);
-// 1/15/2025 10:45:00 AM
+var cartItemsJson = """
+[
+  { "Sku": "ABC123", "Qty": 1, "Price": 19.99 },
+  { "Sku": "XYZ789", "Qty": 2, "Price": 5.00 }
+]
+""";
 
-string roundTrip = dynObj.ToJson();
-Console.WriteLine(roundTrip);
+// 1) Convert JSON → dynamic JSON objects
+dynamic customer = customerJson.ToDynamic();
+var cartItems = (DynamicJsonList)cartItemsJson.ToDynamic();
+
+customer.Name = "John Doe";
+customer.Email = "john@example.com";
+
+// Work with value types dynamically
+var dynamicTotal = cartItems
+    .AsEnumerable()
+    .Sum(x => (long)x.Qty * (double)x.Price);
+
+Console.WriteLine($"Dynamic cart total: {dynamicTotal}");
+
+// 2) Build outbound payload as a CLR anonymous object
+var payload = new
+{
+    customer = Raw.ToRawObject(customer),
+    items = Raw.ToRawObject(cartItems),
+    total = dynamicTotal,
+    timestamp = DateTime.UtcNow
+};
+
+payload.customer.Name = "James Doe";
+
+// 3) Convert entire payload → dynamic JSON
+dynamic dyn = payload.ToDynamic();
+
+// 4) Use the result dynamically
+Console.WriteLine((string)dyn.customer.Name);      // "John Doe"
+Console.WriteLine((double)dyn.total);              // 29.99 → double
+Console.WriteLine((string)dyn.items[0].Sku);       // "ABC123"
+
+// 5) Modify before sending
+dyn.customer.Email = "billing@" + dyn.customer.Email;
+
+// 6) Serialize back for HTTP call
+var finalJson = DynamicJson.ToJson(dyn);
+
+Console.WriteLine("Final outbound JSON:");
+Console.WriteLine(finalJson);
 ```
 
 ---

@@ -66,12 +66,12 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <remarks>
         /// This method first normalizes the input by converting dynamic wrappers into
-        /// dictionaries or lists using <see cref="Raw.ToRawValue(object?)"/>, then
+        /// dictionaries or lists using <see cref="Raw.ToRawObject(object?)"/>, then
         /// serializes the result with <see cref="System.Text.Json.JsonSerializer"/>.
         /// </remarks>
         public static string ToJson(object? value)
         {
-            var raw = Raw.ToRawValue(value);
+            var raw = Raw.ToRawObject(value);
             return JsonSerializer.Serialize(raw);
         }
     }

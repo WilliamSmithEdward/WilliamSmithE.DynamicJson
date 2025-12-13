@@ -255,7 +255,7 @@ namespace WilliamSmithE.DynamicJson
         /// <para>
         /// This method recursively unwraps <see cref="DynamicJsonObject"/> and
         /// <see cref="DynamicJsonList"/> instances into raw structures via
-        /// <see cref="Raw.ToRawValue(object?)"/>, producing a representation that
+        /// <see cref="Raw.ToRawObject(object?)"/>, producing a representation that
         /// mirrors the original JSON.
         /// </para>
         /// <para>
@@ -269,7 +269,7 @@ namespace WilliamSmithE.DynamicJson
 
             foreach (var kvp in Properties)
             {
-                dict[kvp.Key] = Raw.ToRawValue(kvp.Value);
+                dict[kvp.Key] = Raw.ToRawObject(kvp.Value);
             }
 
             return dict;

@@ -2,8 +2,41 @@
 
 namespace WilliamSmithE.DynamicJson
 {
+    /// <summary>
+    /// Provides extension methods for converting <see cref="JsonElement"/> values
+    /// and related collections into dynamic objects backed by
+    /// <see cref="SafeDynamicObject"/> and <see cref="SafeDynamicList"/>.
+    /// </summary>
+    /// <remarks>
+    /// These extensions enable seamless transformation of parsed JSON structures
+    /// into navigable dynamic representations while preserving type information and
+    /// supporting downstream mapping into strongly typed models.
+    /// </remarks>
     public static class JsonElementDynamicExtensions
     {
+        /// <summary>
+        /// Converts a list of <see cref="JsonElement"/> objects into a list of dynamic
+        /// objects backed by <see cref="SafeDynamicObject"/> instances.
+        /// </summary>
+        /// <param name="items">
+        /// The list of <see cref="JsonElement"/> values to convert.
+        /// </param>
+        /// <returns>
+        /// A <see cref="List{T}"/> of dynamic objects representing the JSON structures
+        /// contained in <paramref name="items"/>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// Each <see cref="JsonElement"/> is transformed into a case-insensitive
+        /// dictionary of raw CLR values, with nested objects and arrays converted via
+        /// <see cref="ConvertJsonElement"/>.
+        /// </para>
+        /// <para>
+        /// If a property named <c>fields</c> is encountered, its child properties are
+        /// flattened into the top-level dictionary before constructing the
+        /// <see cref="SafeDynamicObject"/>.
+        /// </para>
+        /// </remarks>
         public static List<dynamic> AsDynamic(this List<JsonElement> items)
         {
             ArgumentNullException.ThrowIfNull(items);
@@ -36,12 +69,44 @@ namespace WilliamSmithE.DynamicJson
             return result;
         }
 
+        /// <summary>
+        /// Converts a single <see cref="JsonElement"/> into a dynamic object backed by
+        /// a <see cref="SafeDynamicObject"/>.
+        /// </summary>
+        /// <param name="item">
+        /// The <see cref="JsonElement"/> to convert.
+        /// </param>
+        /// <returns>
+        /// A dynamic representation of the JSON element, typically a
+        /// <see cref="SafeDynamicObject"/>.
+        /// </returns>
+        /// <remarks>
+        /// This method wraps the element in a temporary list and delegates to
+        /// <see cref="AsDynamic(System.Collections.Generic.List{System.Text.Json.JsonElement})"/>
+        /// to ensure consistent conversion behavior with list-based processing.
+        /// </remarks>
         public static dynamic AsDynamic(this JsonElement item)
         {
             var list = new List<JsonElement> { item };
             return list.AsDynamic()[0];
         }
 
+        /// <summary>
+        /// Converts a sequence of objects into a sequence of dynamic values by selecting
+        /// only elements that are <see cref="SafeDynamicObject"/> instances.
+        /// </summary>
+        /// <param name="source">
+        /// The sequence of objects to evaluate.
+        /// </param>
+        /// <returns>
+        /// An <see cref="IEnumerable{T}"/> containing only the dynamic objects backed by
+        /// <see cref="SafeDynamicObject"/> instances.
+        /// </returns>
+        /// <remarks>
+        /// Elements that are not <see cref="SafeDynamicObject"/> instances are skipped.
+        /// This method never throws and yields no values if <paramref name="source"/> is
+        /// <c>null</c>.
+        /// </remarks>
         public static IEnumerable<dynamic> AsDynamics(this IEnumerable<object?> source)
         {
             if (source == null)
@@ -54,6 +119,22 @@ namespace WilliamSmithE.DynamicJson
             }
         }
 
+        /// <summary>
+        /// Returns the first element in the sequence that is a
+        /// <see cref="SafeDynamicObject"/>, or <c>null</c> if none exist.
+        /// </summary>
+        /// <param name="source">
+        /// The sequence to search.
+        /// </param>
+        /// <returns>
+        /// The first <see cref="SafeDynamicObject"/> in the sequence, or <c>null</c>
+        /// if no such element is found.
+        /// </returns>
+        /// <remarks>
+        /// This method does not throw if <paramref name="source"/> is <c>null</c>;
+        /// it simply returns <c>null</c>.
+        /// Non-object elements are ignored.
+        /// </remarks>
         public static dynamic? First(this IEnumerable<object?> source)
         {
             if (source == null)

@@ -371,6 +371,33 @@ var finalJson = DynamicJson.ToJson(dyn);
 
 Console.WriteLine("Final outbound JSON:");
 Console.WriteLine(finalJson);
+
+// Dynamic cart total: 29.99
+// John Doe
+// 29.99
+// ABC123
+// Final outbound JSON:
+// {
+//     "customer": {
+//         "CustomerId": 42,
+//         "Name": "John Doe",
+//         "Email": "billing@john@example.com"
+//     },
+//     "items": [
+//         {
+//             "Sku": "ABC123",
+//             "Qty": 1,
+//             "Price": 19.99
+//         },
+//         {
+//             "Sku": "XYZ789",
+//             "Qty": 2,
+//             "Price": 5
+//         }
+//     ],
+//     "total": 29.99,
+//     "timestamp": "2025-12-13T09:47:40.4611875Z"
+// }
 ```
 
 ---

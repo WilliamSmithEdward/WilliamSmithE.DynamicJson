@@ -15,28 +15,19 @@ namespace WilliamSmithE.DynamicJson
     public static class JsonElementDynamicExtensions
     {
         /// <summary>
-        /// Converts a list of <see cref="JsonElement"/> objects into a list of dynamic
-        /// objects backed by <see cref="DynamicJsonObject"/> instances.
+        /// Converts a list of <see cref="JsonElement"/> values into dynamic JSON objects
+        /// backed by <see cref="DynamicJsonObject"/> and <see cref="DynamicJsonList"/>.
         /// </summary>
         /// <param name="items">
-        /// The list of <see cref="JsonElement"/> values to convert.
+        /// The list of <see cref="JsonElement"/> instances to convert.
         /// </param>
         /// <returns>
-        /// A <see cref="List{T}"/> of dynamic objects representing the JSON structures
-        /// contained in <paramref name="items"/>.
+        /// A list of dynamic representations of the provided JSON elements. Elements that
+        /// cannot be converted are skipped.
         /// </returns>
-        /// <remarks>
-        /// <para>
-        /// Each <see cref="JsonElement"/> is transformed into a case-insensitive
-        /// dictionary of raw CLR values, with nested objects and arrays converted via
-        /// <see cref="ConvertJsonElement"/>.
-        /// </para>
-        /// <para>
-        /// If a property named <c>fields</c> is encountered, its child properties are
-        /// flattened into the top-level dictionary before constructing the
-        /// <see cref="DynamicJsonObject"/>.
-        /// </para>
-        /// </remarks>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="items"/> is <c>null</c>.
+        /// </exception>
         public static List<dynamic> AsDynamic(this List<JsonElement> items)
         {
             ArgumentNullException.ThrowIfNull(items);
@@ -45,25 +36,12 @@ namespace WilliamSmithE.DynamicJson
 
             foreach (var item in items)
             {
-                var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                var converted = ConvertJsonElement(item);
 
-                foreach (var prop in item.EnumerateObject())
+                if (converted != null)
                 {
-                    if (prop.NameEquals("fields"))
-                    {
-                        foreach (var fieldProp in prop.Value.EnumerateObject())
-                        {
-                            dict[fieldProp.Name] = ConvertJsonElement(fieldProp.Value);
-                        }
-                    }
-
-                    else
-                    {
-                        dict[prop.Name] = ConvertJsonElement(prop.Value);
-                    }
+                    result.Add(converted);
                 }
-
-                result.Add(new DynamicJsonObject(dict));
             }
 
             return result;

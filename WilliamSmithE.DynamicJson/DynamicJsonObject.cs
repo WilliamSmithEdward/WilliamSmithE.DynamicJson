@@ -60,17 +60,18 @@ namespace WilliamSmithE.DynamicJson
         /// </param>
         /// <param name="result">
         /// When this method returns, contains the value associated with the
-        /// requested member if a matching key exists; otherwise, an empty string.
+        /// requested member if a matching key exists; otherwise <c>null</c>.
         /// </param>
         /// <returns>
-        /// Always returns <c>true</c>.
+        /// Always returns <c>true</c>, indicating that member access was handled,
+        /// even when the requested property does not exist.
         /// </returns>
         /// <remarks>
-        /// This method searches the underlying value dictionary using
-        /// <see cref="StringComparer.OrdinalIgnoreCase"/> to support case-insensitive
-        /// dynamic member access. If no matching key is found, the method assigns
-        /// <c>string.Empty</c> to <paramref name="result"/> and returns <c>true</c>,
-        /// ensuring safe dynamic access without exceptions.
+        /// This method searches the underlying value dictionary using case-insensitive
+        /// comparison. If a matching property is found, its value is returned. If not,
+        /// <c>null</c> is assigned to <paramref name="result"/>, ensuring that dynamic
+        /// access never throws for missing members. Callers requiring strict behavior
+        /// should use explicit accessors instead of dynamic member access.
         /// </remarks>
         public override bool TryGetMember(GetMemberBinder binder, out object? result)
         {
@@ -83,7 +84,7 @@ namespace WilliamSmithE.DynamicJson
                 }
             }
 
-            result = string.Empty;
+            result = null;
             return true;
         }
 

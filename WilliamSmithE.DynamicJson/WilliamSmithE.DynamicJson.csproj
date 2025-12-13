@@ -15,6 +15,7 @@
     <PackageProjectUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</PackageProjectUrl>
     <PackageIcon>DynamicJsonLogo.png</PackageIcon>
     <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

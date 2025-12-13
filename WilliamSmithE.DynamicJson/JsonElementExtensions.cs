@@ -12,7 +12,7 @@ namespace WilliamSmithE.DynamicJson
     /// into navigable dynamic representations while preserving type information and
     /// supporting downstream mapping into strongly typed models.
     /// </remarks>
-    public static class JsonElementDynamicExtensions
+    public static class JsonElementExtensions
     {
         /// <summary>
         /// Converts a list of <see cref="JsonElement"/> values into dynamic JSON objects
@@ -104,27 +104,28 @@ namespace WilliamSmithE.DynamicJson
             switch (element.ValueKind)
             {
                 case JsonValueKind.Object:
-                    {
-                        var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-                        foreach (var prop in element.EnumerateObject())
-                        {
-                            dict[prop.Name] = ConvertJsonElement(prop.Value);
-                        }
+                {
+                    var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
-                        return new DynamicJsonObject(dict);
+                    foreach (var prop in element.EnumerateObject())
+                    {
+                        dict[prop.Name] = ConvertJsonElement(prop.Value);
                     }
+
+                    return new DynamicJsonObject(dict);
+                }
 
                 case JsonValueKind.Array:
+                {
+                    var list = new List<object?>();
+
+                    foreach (var arrItem in element.EnumerateArray())
                     {
-                        var list = new List<object?>();
-
-                        foreach (var arrItem in element.EnumerateArray())
-                        {
-                            list.Add(ConvertJsonElement(arrItem));
-                        }
-
-                        return new DynamicJsonList(list);
+                        list.Add(ConvertJsonElement(arrItem));
                     }
+
+                    return new DynamicJsonList(list);
+                }
 
                 case JsonValueKind.String:
                     if (element.TryGetDateTime(out var dt)) return dt;

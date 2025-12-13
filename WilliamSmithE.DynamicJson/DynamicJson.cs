@@ -34,7 +34,7 @@ namespace WilliamSmithE.DynamicJson
         /// </exception>
         /// <remarks>
         /// This method standardizes JSON parsing and dynamic conversion, ensuring that
-        /// objects and arrays are handled uniformly via <see cref="JsonElementDynamicExtensions.AsDynamic(System.Text.Json.JsonElement)"/>.
+        /// objects and arrays are handled uniformly via <see cref="JsonElementExtensions.AsDynamic(System.Text.Json.JsonElement)"/>.
         /// </remarks>
         public static dynamic FromJson(string json)
         {

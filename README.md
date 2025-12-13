@@ -1,7 +1,7 @@
 # DynamicJson  
 A simple, lightweight way to work with JSON as dynamic objects or lists, while still giving you type safety when you need it.
 
-This library converts JSON into `SafeDynamicObject` and `SafeDynamicList`, enabling natural property access while retaining optional mapping to strongly typed POCOs.
+This library converts JSON into `DynamicJsonObject` and `DynamicJsonList`, enabling natural property access while retaining optional mapping to strongly typed POCOs.
 
 ---
 
@@ -46,7 +46,7 @@ string json = @"
 }
 ";
 
-var dyn = json.ToDynamic();
+var dynObj = json.ToDynamic();
 ```
 
 ---
@@ -54,19 +54,19 @@ var dyn = json.ToDynamic();
 ## 🧭 Dynamic Navigation
 
 ```csharp
-Console.WriteLine(dyn.id);                       // 67
-Console.WriteLine(dyn.name);                     // John Doe
-Console.WriteLine(dyn.profile.email);            // john@doe.com
+Console.WriteLine(dynObj.id);                       // 67
+Console.WriteLine(dynObj.name);                     // John Doe
+Console.WriteLine(dynObj.profile.email);            // john@doe.com
 
-var firstRole = dyn.profile.roles.First();
+var firstRole = dynObj.profile.roles.First();
 Console.WriteLine(firstRole.roleName);           // Admin
 ```
 
 ## 🔍 LINQ works naturally
 
-Use the `.AsEnumerable()` extension method to enable LINQ queries on `SafeDynamicList` objects.
+Use the `.AsEnumerable()` extension method to enable LINQ queries on `DynamicJsonList` objects.
 
-> ⚠️ When using `.AsEnumerable(...)` with a dynamic list, cast the source to `SafeDynamicList` so the lambda can be bound correctly by the C# compiler.
+> ⚠️ When using `.AsEnumerable(...)` with a dynamic list, cast the source to `DynamicJsonList` so the lambda can be bound correctly by the C# compiler.
 
 Example:
 
@@ -95,10 +95,10 @@ string usersJson = """
 var dynObj = usersJson.ToDynamic();
 
 var names =
-    ((SafeDynamicList)dynObj.users)
+    ((DynamicJsonList)dynObj.users)
         .AsEnumerable()
         .Where(u =>
-            ((SafeDynamicList)u.roles)
+            ((DynamicJsonList)u.roles)
                 .AsEnumerable()
                 .Any(r => r.roleName == "Admin")
         )
@@ -124,7 +124,7 @@ public class MyClass
     public DateTime CreatedDate { get; set; }
 }
 
-MyClass instance = dyn.AsType<MyClass>();
+MyClass instance = dynObj.AsType<MyClass>();
 Console.WriteLine(instance.Id);                  // 67
 ```
 
@@ -137,7 +137,7 @@ public class Profile
     public string Department { get; set; } = string.Empty;
 }
 
-var profile = dyn.profile.AsType<Profile>();
+var profile = dynObj.profile.AsType<Profile>();
 Console.WriteLine(profile.Department);           // Engineering
 ```
 
@@ -146,14 +146,14 @@ Console.WriteLine(profile.Department);           // Engineering
 ## 🔄 Serializing Back to JSON
 
 ```csharp
-var profileJson = dyn.profile.ToJson();
+var profileJson = dynObj.profile.ToJson();
 Console.WriteLine(profileJson);
 ```
 
 Or via helper:
 
 ```csharp
-var jsonOut = DynamicJson.ToJson(dyn.preferences.dashboardWidgets);
+var jsonOut = DynamicJson.ToJson(dynObj.preferences.dashboardWidgets);
 Console.WriteLine(jsonOut);
 ```
 
@@ -162,7 +162,7 @@ Console.WriteLine(jsonOut);
 ## 🏗️ Working With Lists
 
 ```csharp
-foreach (var role in dyn.profile.roles)
+foreach (var role in dynObj.profile.roles)
 {
     Console.WriteLine(role.roleName);
 }
@@ -177,7 +177,7 @@ public class Role
     public int Level { get; set; }
 }
 
-var roles = dyn.profile.roles.ToList<Role>();
+var roles = dynObj.profile.roles.ToList<Role>();
 ```
 
 ---
@@ -185,16 +185,16 @@ var roles = dyn.profile.roles.ToList<Role>();
 ## 📘 Example End-to-End
 
 ```csharp
-var dyn = json.ToDynamic();
+var dynObj = json.ToDynamic();
 
-Console.WriteLine(dyn.profile.roles.First().roleName);
+Console.WriteLine(dynObj.profile.roles.First().roleName);
 // Admin
 
-var user = dyn.AsType<MyClass>();
+var user = dynObj.AsType<MyClass>();
 Console.WriteLine(user.CreatedDate);
 // 1/15/2025 10:45:00 AM
 
-string roundTrip = dyn.ToJson();
+string roundTrip = dynObj.ToJson();
 Console.WriteLine(roundTrip);
 ```
 

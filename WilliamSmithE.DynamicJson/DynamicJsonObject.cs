@@ -11,7 +11,7 @@ namespace WilliamSmithE.DynamicJson
     /// <remarks>
     /// <para>
     /// Each entry in the underlying dictionary may represent a primitive value,
-    /// a nested <see cref="SafeDynamicObject"/>, or a <see cref="SafeDynamicList"/>,
+    /// a nested <see cref="DynamicJsonObject"/>, or a <see cref="DynamicJsonList"/>,
     /// depending on the structure of the original JSON.
     /// </para>
     /// <para>
@@ -25,12 +25,12 @@ namespace WilliamSmithE.DynamicJson
     /// suitable for serialization.
     /// </para>
     /// </remarks>
-    public class SafeDynamicObject(IDictionary<string, object?> values) : DynamicObject
+    public class DynamicJsonObject(IDictionary<string, object?> values) : DynamicObject
     {
         private readonly IDictionary<string, object?> values = values ?? throw new ArgumentNullException(nameof(values));
         /// <summary>
         /// Gets a read-only view of the key/value pairs contained in this
-        /// <see cref="SafeDynamicObject"/>.
+        /// <see cref="DynamicJsonObject"/>.
         /// </summary>
         /// <remarks>
         /// The underlying value store must be backed by an <see cref="IDictionary{TKey, TValue}"/>.
@@ -40,7 +40,7 @@ namespace WilliamSmithE.DynamicJson
         /// dynamic member access and internal lookups.
         /// 
         /// This property exposes the raw values, which may include primitives,
-        /// nested <see cref="SafeDynamicObject"/> instances, or <see cref="SafeDynamicList"/> 
+        /// nested <see cref="DynamicJsonObject"/> instances, or <see cref="DynamicJsonList"/> 
         /// instances, depending on the structure of the original JSON.
         /// </remarks>
         /// <exception cref="InvalidOperationException">
@@ -114,7 +114,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Attempts to map the values of this <see cref="SafeDynamicObject"/> to a new
+        /// Attempts to map the values of this <see cref="DynamicJsonObject"/> to a new
         /// instance of the specified type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">
@@ -203,7 +203,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Attempts to map this <see cref="SafeDynamicObject"/> to an instance of the
+        /// Attempts to map this <see cref="DynamicJsonObject"/> to an instance of the
         /// specified type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">
@@ -242,7 +242,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Converts this <see cref="SafeDynamicObject"/> into a plain dictionary
+        /// Converts this <see cref="DynamicJsonObject"/> into a plain dictionary
         /// containing only raw CLR values.
         /// </summary>
         /// <returns>
@@ -252,8 +252,8 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <remarks>
         /// <para>
-        /// This method recursively unwraps <see cref="SafeDynamicObject"/> and
-        /// <see cref="SafeDynamicList"/> instances into raw structures via
+        /// This method recursively unwraps <see cref="DynamicJsonObject"/> and
+        /// <see cref="DynamicJsonList"/> instances into raw structures via
         /// <see cref="Raw.ToRawValue(object?)"/>, producing a representation that
         /// mirrors the original JSON.
         /// </para>
@@ -275,7 +275,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Serializes this <see cref="SafeDynamicObject"/> to a JSON string.
+        /// Serializes this <see cref="DynamicJsonObject"/> to a JSON string.
         /// </summary>
         /// <returns>
         /// A JSON representation of the object produced by converting all values

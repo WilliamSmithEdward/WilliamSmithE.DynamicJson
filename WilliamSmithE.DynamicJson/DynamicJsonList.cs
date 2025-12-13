@@ -12,7 +12,7 @@ namespace WilliamSmithE.DynamicJson
     /// <remarks>
     /// <para>
     /// Each element in the list may be a primitive value, a
-    /// <see cref="SafeDynamicObject"/>, or another <see cref="SafeDynamicList"/>,
+    /// <see cref="DynamicJsonObject"/>, or another <see cref="DynamicJsonList"/>,
     /// depending on the structure of the underlying JSON.
     /// </para>
     /// <para>
@@ -21,12 +21,12 @@ namespace WilliamSmithE.DynamicJson
     /// to strongly typed models.
     /// </para>
     /// </remarks>
-    public class SafeDynamicList(IList<object?> items) : DynamicObject, IEnumerable<object?>
+    public class DynamicJsonList(IList<object?> items) : DynamicObject, IEnumerable<object?>
     {
         private readonly IList<object?> items = items ?? throw new ArgumentNullException(nameof(items));
 
         /// <summary>
-        /// Attempts to invoke a dynamic member on the <see cref="SafeDynamicList"/>.
+        /// Attempts to invoke a dynamic member on the <see cref="DynamicJsonList"/>.
         /// </summary>
         /// <param name="binder">
         /// Provides information about the invoked member, including the method name.
@@ -44,7 +44,7 @@ namespace WilliamSmithE.DynamicJson
         /// <remarks>
         /// This implementation supports the dynamic invocation of a <c>First()</c> method,
         /// returning the first element in the list that is either a
-        /// <see cref="SafeDynamicObject"/> or a <see cref="SafeDynamicList"/>.
+        /// <see cref="DynamicJsonObject"/> or a <see cref="DynamicJsonList"/>.
         /// All other method names are ignored.
         /// </remarks>
         public override bool TryInvokeMember(InvokeMemberBinder binder, object?[]? args, out object? result)
@@ -79,15 +79,15 @@ namespace WilliamSmithE.DynamicJson
         /// </exception>
         /// <remarks>
         /// This method examines the list in order and attempts to map the first
-        /// <see cref="SafeDynamicObject"/> it encounters to the specified type using
-        /// <see cref="SafeDynamicObject.AsType{T}"/>.
+        /// <see cref="DynamicJsonObject"/> it encounters to the specified type using
+        /// <see cref="DynamicJsonObject.AsType{T}"/>.
         /// Non-object items are ignored.
         /// </remarks>
         public T? First<T>(bool nullOnConversionError = false) where T : class, new()
         {
             foreach (var item in items)
             {
-                if (item is SafeDynamicObject sdo)
+                if (item is DynamicJsonObject sdo)
                 {
                     var mapped = sdo.AsType<T>();
 
@@ -120,7 +120,7 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <remarks>
         /// This method iterates through the list and attempts to map each
-        /// <see cref="SafeDynamicObject"/> using <see cref="SafeDynamicObject.AsType{T}"/>.
+        /// <see cref="DynamicJsonObject"/> using <see cref="DynamicJsonObject.AsType{T}"/>.
         /// Non-object items are ignored.
         /// 
         /// Unlike <c>First{T}</c>, this method never throws when the list is empty or
@@ -130,7 +130,7 @@ namespace WilliamSmithE.DynamicJson
         {
             foreach (var item in items)
             {
-                if (item is SafeDynamicObject sdo)
+                if (item is DynamicJsonObject sdo)
                 {
                     var mapped = sdo.AsType<T>();
 
@@ -146,7 +146,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Converts all <see cref="SafeDynamicObject"/> elements in the list into
+        /// Converts all <see cref="DynamicJsonObject"/> elements in the list into
         /// instances of the specified type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">
@@ -158,7 +158,7 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <remarks>
         /// This method iterates through the list and attempts to map each
-        /// <see cref="SafeDynamicObject"/> using <see cref="SafeDynamicObject.AsType{T}"/>.
+        /// <see cref="DynamicJsonObject"/> using <see cref="DynamicJsonObject.AsType{T}"/>.
         /// Non-object items are ignored, and elements that cannot be mapped are skipped
         /// without throwing exceptions.
         /// </remarks>
@@ -168,7 +168,7 @@ namespace WilliamSmithE.DynamicJson
 
             foreach (var item in items)
             {
-                if (item is SafeDynamicObject sdo)
+                if (item is DynamicJsonObject sdo)
                 {
                     var mapped = sdo.AsType<T>();
 
@@ -201,7 +201,7 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <remarks>
         /// This method enables dynamic index access such as <c>list[0]</c> on a
-        /// <see cref="SafeDynamicList"/>.  
+        /// <see cref="DynamicJsonList"/>.  
         /// The index must be a single non-negative integer within the bounds of the list.
         /// Invalid indexes do not throw exceptions.
         /// </remarks>
@@ -219,7 +219,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Converts this <see cref="SafeDynamicList"/> into a plain list containing
+        /// Converts this <see cref="DynamicJsonList"/> into a plain list containing
         /// only raw CLR values.
         /// </summary>
         /// <returns>
@@ -227,8 +227,8 @@ namespace WilliamSmithE.DynamicJson
         /// a nested dictionary, or a list suitable for JSON serialization.
         /// </returns>
         /// <remarks>
-        /// This method recursively unwraps <see cref="SafeDynamicObject"/> and
-        /// <see cref="SafeDynamicList"/> instances into raw structures using
+        /// This method recursively unwraps <see cref="DynamicJsonObject"/> and
+        /// <see cref="DynamicJsonList"/> instances into raw structures using
         /// <see cref="Raw.ToRawValue(object?)"/>, producing a representation that
         /// mirrors the original JSON.
         /// </remarks>
@@ -245,7 +245,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Serializes this <see cref="SafeDynamicList"/> to a JSON string.
+        /// Serializes this <see cref="DynamicJsonList"/> to a JSON string.
         /// </summary>
         /// <returns>
         /// A JSON representation of the list produced by converting all elements
@@ -263,7 +263,7 @@ namespace WilliamSmithE.DynamicJson
 
         /// <summary>
         /// Returns an enumerator that iterates through the elements of the
-        /// <see cref="SafeDynamicList"/>.
+        /// <see cref="DynamicJsonList"/>.
         /// </summary>
         /// <returns>
         /// An <see cref="IEnumerator{T}"/> that can be used to iterate through the list.
@@ -282,7 +282,7 @@ namespace WilliamSmithE.DynamicJson
 
         /// <summary>
         /// Returns a non-generic enumerator that iterates through the
-        /// <see cref="SafeDynamicList"/>.
+        /// <see cref="DynamicJsonList"/>.
         /// </summary>
         /// <returns>
         /// An <see cref="IEnumerator"/> for iterating through the list.
@@ -302,13 +302,13 @@ namespace WilliamSmithE.DynamicJson
             foreach (var item in items)
             {
 
-                if (item is SafeDynamicObject sdo)
+                if (item is DynamicJsonObject sdo)
                 {
 
                     return sdo;
                 }
 
-                if (item is SafeDynamicList sdl)
+                if (item is DynamicJsonList sdl)
                 {
 
                     return sdl;

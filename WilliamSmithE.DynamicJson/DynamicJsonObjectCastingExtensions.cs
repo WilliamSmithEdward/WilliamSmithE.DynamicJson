@@ -3,24 +3,24 @@
 namespace WilliamSmithE.DynamicJson
 {
     /// <summary>
-    /// Provides extension methods for mapping <see cref="SafeDynamicObject"/> instances
+    /// Provides extension methods for mapping <see cref="DynamicJsonObject"/> instances
     /// and related values into strongly typed model classes.
     /// </summary>
     /// <remarks>
     /// These extensions enable convenient conversion of dynamic JSON structures into
     /// concrete CLR types using best-effort property matching and value conversion.
     /// </remarks>
-    public static class SafeDynamicObjectCastingExtensions
+    public static class DynamicJsonObjectCastingExtensions
     {
         /// <summary>
-        /// Attempts to map the values of the specified <see cref="SafeDynamicObject"/> to a new
+        /// Attempts to map the values of the specified <see cref="DynamicJsonObject"/> to a new
         /// instance of the type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">
         /// The target class type to map into. Must have a public parameterless constructor.
         /// </typeparam>
         /// <param name="source">
-        /// The <see cref="SafeDynamicObject"/> whose values will be used for mapping.
+        /// The <see cref="DynamicJsonObject"/> whose values will be used for mapping.
         /// </param>
         /// <returns>
         /// A new instance of <typeparamref name="T"/> with matching writable properties
@@ -31,7 +31,7 @@ namespace WilliamSmithE.DynamicJson
         /// <para>
         /// Property matching is performed using case-insensitive comparison between the names
         /// of the target type's public instance properties and the keys exposed by
-        /// <see cref="SafeDynamicObject.Properties"/>.
+        /// <see cref="DynamicJsonObject.Properties"/>.
         /// </para>
         /// <para>
         /// If a value is <c>null</c>, the corresponding target property is explicitly set to
@@ -43,7 +43,7 @@ namespace WilliamSmithE.DynamicJson
         /// writable properties on the target type are considered.
         /// </para>
         /// </remarks>
-        public static T? AsType<T>(this SafeDynamicObject source)
+        public static T? AsType<T>(this DynamicJsonObject source)
             where T : class, new()
         {
             ArgumentNullException.ThrowIfNull(source);
@@ -114,11 +114,11 @@ namespace WilliamSmithE.DynamicJson
         /// The target class type to map into. Must have a public parameterless constructor.
         /// </typeparam>
         /// <param name="value">
-        /// The value to map. May be a <see cref="SafeDynamicObject"/> or an instance of
+        /// The value to map. May be a <see cref="DynamicJsonObject"/> or an instance of
         /// <typeparamref name="T"/>.
         /// </param>
         /// <returns>
-        /// If <paramref name="value"/> is a <see cref="SafeDynamicObject"/>, a new instance of
+        /// If <paramref name="value"/> is a <see cref="DynamicJsonObject"/>, a new instance of
         /// <typeparamref name="T"/> populated from its values; if it is already a
         /// <typeparamref name="T"/>, the same instance is returned; otherwise <c>null</c>.
         /// </returns>
@@ -130,7 +130,7 @@ namespace WilliamSmithE.DynamicJson
         public static T? AsType<T>(this object? value)
         where T : class, new()
         {
-            if (value is SafeDynamicObject sdo)
+            if (value is DynamicJsonObject sdo)
             {
                 return sdo.AsType<T>();
             }

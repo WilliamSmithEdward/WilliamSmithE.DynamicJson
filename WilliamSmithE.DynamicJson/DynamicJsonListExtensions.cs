@@ -2,7 +2,7 @@
 {
     public static class SafeDynamicListLinqExtensions
     {
-        public static IEnumerable<dynamic> AsEnumerable(this SafeDynamicList list)
+        public static IEnumerable<dynamic> AsEnumerable(this DynamicJsonList list)
         {
             foreach (var item in list)
                 yield return item ?? new();

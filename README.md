@@ -12,7 +12,9 @@ This library converts JSON into `DynamicJsonObject` and `DynamicJsonList`, enabl
 - Lists behave like `IEnumerable` (LINQ ready)  
 - Automatic conversion of JSON scalars → .NET primitives  
 - Best-effort `AsType<T>()` for mapping to POCO classes  
-- Non-throwing on missing properties  
+- Safe property access with case-insensitive matching  
+- Missing properties return null (never throws)  
+- List indexing behaves like normal .NET indexers and throws clear exceptions on invalid indices
 - Round-trip serialization support (`ToJson`)  
 - Clean, minimal API surface
 
@@ -61,6 +63,8 @@ Console.WriteLine(dynObj.profile.email);            // john@doe.com
 var firstRole = dynObj.profile.roles.First();
 Console.WriteLine(firstRole.roleName);           // Admin
 ```
+
+---
 
 ## 🔍 LINQ works naturally
 
@@ -167,6 +171,14 @@ foreach (var role in dynObj.profile.roles)
     Console.WriteLine(role.roleName);
 }
 ```
+Indexing into a `DynamicJsonList` behaves like a normal .NET list:
+
+```csharp
+Console.WriteLine(dynObj.profile.roles[0].roleName); // valid
+
+Console.WriteLine(dynObj.profile.roles[5]); 
+// throws IndexOutOfRangeException with a clear message
+```
 
 Mapping:
 
@@ -180,6 +192,32 @@ public class Role
 var roles = dynObj.profile.roles.ToList<Role>();
 ```
 
+---
+
+## 📌 Note on `.AsEnumerable()` and Dynamic Lists
+
+`DynamicJsonList` supports direct iteration and dynamic indexing.  
+
+The `.AsEnumerable()` extension is required **only** to help the C# compiler bind LINQ queries that involve `dynamic` values.
+
+It does *not* change how the list behaves.
+
+Examples:
+
+```csharp
+// Direct iteration works without AsEnumerable()
+foreach (var role in dynObj.profile.roles)
+{
+    Console.WriteLine(role.roleName);
+}
+
+// AsEnumerable is required only when using LINQ over dynamic items
+var adminRoles =
+    ((DynamicJsonList)dynObj.profile.roles)
+        .AsEnumerable()
+        .Where(r => r.roleName == "Admin")
+        .ToList();
+```
 ---
 
 ## 📘 Example End-to-End

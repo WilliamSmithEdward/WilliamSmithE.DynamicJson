@@ -27,7 +27,7 @@
         /// are recursively unwrapped into dictionaries and lists, preserving the
         /// structure of the original JSON.
         /// </remarks>
-        public static object? ToRawValue(object? value)
+        public static object? ToRawObject(object? value)
         {
             if (value is DynamicJsonObject sdo)
                 return sdo.ToRawObject();

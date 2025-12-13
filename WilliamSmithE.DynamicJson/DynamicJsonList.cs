@@ -23,6 +23,11 @@ namespace WilliamSmithE.DynamicJson
     /// </remarks>
     public class DynamicJsonList(IList<object?> items) : DynamicObject, IEnumerable<object?>
     {
+        /// <summary>
+        /// Gets the number of items contained in this <see cref="DynamicJsonList"/>.
+        /// </summary>
+        public int Count => items.Count;
+
         private readonly IList<object?> items = items ?? throw new ArgumentNullException(nameof(items));
 
         /// <summary>
@@ -233,7 +238,7 @@ namespace WilliamSmithE.DynamicJson
         /// <remarks>
         /// This method recursively unwraps <see cref="DynamicJsonObject"/> and
         /// <see cref="DynamicJsonList"/> instances into raw structures using
-        /// <see cref="Raw.ToRawValue(object?)"/>, producing a representation that
+        /// <see cref="Raw.ToRawObject(object?)"/>, producing a representation that
         /// mirrors the original JSON.
         /// </remarks>
         public List<object?> ToRawArray()
@@ -242,7 +247,7 @@ namespace WilliamSmithE.DynamicJson
 
             foreach (var item in items)
             {
-                list.Add(Raw.ToRawValue(item));
+                list.Add(Raw.ToRawObject(item));
             }
 
             return list;

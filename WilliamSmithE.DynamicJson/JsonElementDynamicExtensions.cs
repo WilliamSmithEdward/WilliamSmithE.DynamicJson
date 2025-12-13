@@ -70,34 +70,6 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Converts a sequence of objects into a sequence of dynamic values by selecting
-        /// only elements that are <see cref="DynamicJsonObject"/> instances.
-        /// </summary>
-        /// <param name="source">
-        /// The sequence of objects to evaluate.
-        /// </param>
-        /// <returns>
-        /// An <see cref="IEnumerable{T}"/> containing only the dynamic objects backed by
-        /// <see cref="DynamicJsonObject"/> instances.
-        /// </returns>
-        /// <remarks>
-        /// Elements that are not <see cref="DynamicJsonObject"/> instances are skipped.
-        /// This method never throws and yields no values if <paramref name="source"/> is
-        /// <c>null</c>.
-        /// </remarks>
-        public static IEnumerable<dynamic> AsDynamics(this IEnumerable<object?> source)
-        {
-            if (source == null)
-                yield break;
-
-            foreach (var item in source)
-            {
-                if (item is DynamicJsonObject sdo)
-                    yield return sdo;
-            }
-        }
-
-        /// <summary>
         /// Returns the first element in the sequence that is a
         /// <see cref="DynamicJsonObject"/>, or <c>null</c> if none exist.
         /// </summary>

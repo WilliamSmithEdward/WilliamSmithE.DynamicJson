@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <Version>1.0.1</Version>
-    <Title>WilliamSmithE.DynamicJSON</Title>
+    <Title>WilliamSmithE.DynamicJson</Title>
     <Copyright>William Smith 2025</Copyright>
     <PackageProjectUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</PackageProjectUrl>
     <PackageIcon>DynamicJsonLogo.png</PackageIcon>

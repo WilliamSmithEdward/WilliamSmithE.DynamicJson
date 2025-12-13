@@ -13,8 +13,8 @@ namespace WilliamSmithE.DynamicJson
     public static class DynamicJsonObjectCastingExtensions
     {
         /// <summary>
-        /// Attempts to map the values of the specified <see cref="DynamicJsonObject"/> to a new
-        /// instance of the type <typeparamref name="T"/>.
+        /// Maps the values of the specified <see cref="DynamicJsonObject"/> to a new instance
+        /// of the type <typeparamref name="T"/> using sanitized, case-insensitive key matching.
         /// </summary>
         /// <typeparam name="T">
         /// The target class type to map into. Must have a public parameterless constructor.
@@ -24,23 +24,22 @@ namespace WilliamSmithE.DynamicJson
         /// </param>
         /// <returns>
         /// A new instance of <typeparamref name="T"/> with matching writable properties
-        /// populated from the dynamic object's values. If a property cannot be mapped or
-        /// converted, it is skipped. Never returns <c>null</c>.
+        /// populated from the dynamic object's values. Never returns <c>null</c>.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Property matching is performed using case-insensitive comparison between the names
-        /// of the target type's public instance properties and the keys exposed by
-        /// <see cref="DynamicJsonObject.Properties"/>.
+        /// Property matching is performed using case-insensitive comparison between the
+        /// sanitized names of the target type's public instance properties and the sanitized
+        /// keys exposed by <see cref="DynamicJsonObject.Properties"/>.
         /// </para>
         /// <para>
-        /// If a value is <c>null</c>, the corresponding target property is explicitly set to
-        /// <c>null</c>. For non-null values, the method attempts assignment using either direct
-        /// type compatibility or <see cref="Convert.ChangeType(object?, Type)"/>.
+        /// If a value is <c>null</c>, the corresponding target property is explicitly set
+        /// to <c>null</c>. For non-null values, the method attempts assignment using either
+        /// direct type compatibility or <see cref="Convert.ChangeType(object?, Type)"/>.
         /// </para>
         /// <para>
-        /// Conversion errors are swallowed silently to preserve best-effort behavior. Only
-        /// writable properties on the target type are considered.
+        /// Conversion errors are allowed to propagate to the caller. For a safe,
+        /// exception-free variant, use <c>TryAsType&lt;T&gt;</c> instead.
         /// </para>
         /// </remarks>
         public static T? AsType<T>(this DynamicJsonObject source)
@@ -62,7 +61,7 @@ namespace WilliamSmithE.DynamicJson
                 foreach (var kvp in source.Properties)
                 {
 
-                    if (!kvp.Key.Equals(targetProp.Name, StringComparison.OrdinalIgnoreCase))
+                    if (!kvp.Key.Equals(targetProp.Name.Sanitize(), StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -77,33 +76,76 @@ namespace WilliamSmithE.DynamicJson
 
                     var targetType = Nullable.GetUnderlyingType(targetProp.PropertyType) ?? targetProp.PropertyType;
 
-                    try
+                    if (targetType.IsInstanceOfType(value))
                     {
 
-                        if (targetType.IsInstanceOfType(value))
-                        {
-
-                            targetProp.SetValue(result, value);
-                        }
-
-                        else
-                        {
-
-                            var converted = Convert.ChangeType(value, targetType);
-                            targetProp.SetValue(result, converted);
-                        }
+                        targetProp.SetValue(result, value);
                     }
 
-                    catch
+                    else
                     {
-                        // Best-effort: if conversion fails, just skip this property
+                        var converted = Convert.ChangeType(value, targetType);
+                        targetProp.SetValue(result, converted);
                     }
-
-                    break;
                 }
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Attempts to map the specified <see cref="DynamicJsonObject"/> to a new instance
+        /// of the type <typeparamref name="T"/> without throwing exceptions.
+        /// </summary>
+        /// <typeparam name="T">
+        /// The target class type to map into. Must have a public parameterless constructor.
+        /// </typeparam>
+        /// <param name="source">
+        /// The <see cref="DynamicJsonObject"/> whose values will be used for mapping.
+        /// </param>
+        /// <param name="result">
+        /// When this method returns, contains the populated <typeparamref name="T"/> instance
+        /// if the mapping succeeds; otherwise <c>null</c>.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if mapping was successful and <paramref name="result"/> is non-<c>null</c>;
+        /// otherwise <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// <para>
+        /// This method wraps <see cref="AsType{T}(DynamicJsonObject)"/> in a safe,
+        /// exception-free form. Any conversion or assignment errors are silently handled,
+        /// ensuring that dynamic-to-POCO mapping can be attempted without risk of throwing
+        /// exceptions.
+        /// </para>
+        /// <para>
+        /// Callers that require strict behavior can use <see cref="AsType{T}(DynamicJsonObject)"/>
+        /// directly instead of this method.
+        /// </para>
+        /// </remarks>
+        public static bool TryAsType<T>(this DynamicJsonObject source, out T? result) where T : class, new()
+        {
+            ArgumentNullException.ThrowIfNull(source);
+
+            try
+            {
+                var mapped = source.AsType<T>();
+
+                if (mapped != null)
+                {
+                    result = mapped;
+                    return true;
+                }
+
+                result = null;
+                return false;
+            }
+
+            catch
+            {
+                result = null;
+                return false;
+            }
         }
 
         /// <summary>

@@ -53,6 +53,37 @@ var dynObj = json.ToDynamic();
 
 ---
 
+## 🔑 Key Sanitization (How Property Names Are Matched)
+
+DynamicJson automatically normalizes all JSON property names using a
+simple rule:
+
+**Only letters and digits are kept. All other characters are removed.**
+
+Examples:
+
+| JSON Key           | Sanitized Form |
+|-------------------|----------------|
+| `First Name`      | `FirstName`    |
+| `PROJECT NAME`    | `PROJECTNAME`  |
+| `order-id`        | `orderid`      |
+| `2024_total$`     | `2024total`    |
+
+This means you can safely access JSON like:
+
+```json
+{
+  "First Name": "Harry"
+  "order-id": 12345
+}
+```
+
+Using:
+```csharp
+dynObj.FirstName  // "Harry"
+dynObj.OrderId    // 12345
+```
+
 ## 🧭 Dynamic Navigation
 
 ```csharp
@@ -61,7 +92,7 @@ Console.WriteLine(dynObj.name);                     // John Doe
 Console.WriteLine(dynObj.profile.email);            // john@doe.com
 
 var firstRole = dynObj.profile.roles.First();
-Console.WriteLine(firstRole.roleName);           // Admin
+Console.WriteLine(firstRole.roleName);              // Admin
 ```
 
 ---
@@ -118,6 +149,30 @@ foreach (var name in names)
 ```
 
 ## 🎯 Mapping to POCOs
+
+DynamicJson maps JSON to CLR objects using sanitized, case-insensitive
+property matching.
+
+This means JSON like:
+
+```json
+{
+  "Created Date": "1/1/2025"
+}
+
+OR
+
+{
+  "Created-Date": "1/1/2025"
+}
+```
+
+Will correctly populate a POCO property named:
+
+```csharp
+public DateTime CreatedDate { get; set; }
+```
+### Example POCO Mapping
 
 ```csharp
 public class MyClass

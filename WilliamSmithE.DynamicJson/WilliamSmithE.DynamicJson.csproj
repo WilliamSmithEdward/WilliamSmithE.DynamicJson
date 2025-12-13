@@ -14,7 +14,7 @@
     <Copyright>William Smith 2025</Copyright>
     <PackageProjectUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</PackageProjectUrl>
     <PackageIcon>DynamicJsonLogo.png</PackageIcon>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,7 +22,7 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Update="README.md">
+    <None Update="NUGET_README.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

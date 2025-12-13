@@ -12,7 +12,7 @@
     {
         /// <summary>
         /// Converts a JSON string into a dynamic representation backed by
-        /// <see cref="SafeDynamicObject"/> or <see cref="SafeDynamicList"/>.
+        /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/>.
         /// </summary>
         /// <param name="json">
         /// The JSON string to convert.

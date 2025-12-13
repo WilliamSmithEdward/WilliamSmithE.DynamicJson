@@ -8,23 +8,23 @@ namespace WilliamSmithE.DynamicJson
     /// </summary>
     /// <remarks>
     /// This class serves as the entry point for converting raw JSON into
-    /// <see cref="SafeDynamicObject"/> or <see cref="SafeDynamicList"/> instances,
+    /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/> instances,
     /// as well as producing JSON output from dynamic structures.
     /// </remarks>
     public static class DynamicJson
     {
         /// <summary>
         /// Parses a JSON string and converts the root element into a dynamic
-        /// representation backed by <see cref="SafeDynamicObject"/> or
-        /// <see cref="SafeDynamicList"/>.
+        /// representation backed by <see cref="DynamicJsonObject"/> or
+        /// <see cref="DynamicJsonList"/>.
         /// </summary>
         /// <param name="json">
         /// The JSON string to parse.
         /// </param>
         /// <returns>
         /// A dynamic object representing the root JSON structure. This will be a
-        /// <see cref="SafeDynamicObject"/> for JSON objects or a
-        /// <see cref="SafeDynamicList"/> for JSON arrays.
+        /// <see cref="DynamicJsonObject"/> for JSON objects or a
+        /// <see cref="DynamicJsonList"/> for JSON arrays.
         /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="json"/> is <c>null</c>, empty, or whitespace.
@@ -58,8 +58,8 @@ namespace WilliamSmithE.DynamicJson
         /// wrapper types into their raw CLR representations.
         /// </summary>
         /// <param name="value">
-        /// The value to serialize. May be a primitive, a <see cref="SafeDynamicObject"/>,
-        /// a <see cref="SafeDynamicList"/>, or any other JSON-compatible structure.
+        /// The value to serialize. May be a primitive, a <see cref="DynamicJsonObject"/>,
+        /// a <see cref="DynamicJsonList"/>, or any other JSON-compatible structure.
         /// </param>
         /// <returns>
         /// A JSON string representing the provided value.

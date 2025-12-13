@@ -5,7 +5,7 @@ namespace WilliamSmithE.DynamicJson
     /// <summary>
     /// Provides extension methods for converting <see cref="JsonElement"/> values
     /// and related collections into dynamic objects backed by
-    /// <see cref="SafeDynamicObject"/> and <see cref="SafeDynamicList"/>.
+    /// <see cref="DynamicJsonObject"/> and <see cref="DynamicJsonList"/>.
     /// </summary>
     /// <remarks>
     /// These extensions enable seamless transformation of parsed JSON structures
@@ -16,7 +16,7 @@ namespace WilliamSmithE.DynamicJson
     {
         /// <summary>
         /// Converts a list of <see cref="JsonElement"/> objects into a list of dynamic
-        /// objects backed by <see cref="SafeDynamicObject"/> instances.
+        /// objects backed by <see cref="DynamicJsonObject"/> instances.
         /// </summary>
         /// <param name="items">
         /// The list of <see cref="JsonElement"/> values to convert.
@@ -34,7 +34,7 @@ namespace WilliamSmithE.DynamicJson
         /// <para>
         /// If a property named <c>fields</c> is encountered, its child properties are
         /// flattened into the top-level dictionary before constructing the
-        /// <see cref="SafeDynamicObject"/>.
+        /// <see cref="DynamicJsonObject"/>.
         /// </para>
         /// </remarks>
         public static List<dynamic> AsDynamic(this List<JsonElement> items)
@@ -63,7 +63,7 @@ namespace WilliamSmithE.DynamicJson
                     }
                 }
 
-                result.Add(new SafeDynamicObject(dict));
+                result.Add(new DynamicJsonObject(dict));
             }
 
             return result;
@@ -71,14 +71,14 @@ namespace WilliamSmithE.DynamicJson
 
         /// <summary>
         /// Converts a single <see cref="JsonElement"/> into a dynamic object backed by
-        /// a <see cref="SafeDynamicObject"/>.
+        /// a <see cref="DynamicJsonObject"/>.
         /// </summary>
         /// <param name="item">
         /// The <see cref="JsonElement"/> to convert.
         /// </param>
         /// <returns>
         /// A dynamic representation of the JSON element, typically a
-        /// <see cref="SafeDynamicObject"/>.
+        /// <see cref="DynamicJsonObject"/>.
         /// </returns>
         /// <remarks>
         /// This method wraps the element in a temporary list and delegates to
@@ -93,17 +93,17 @@ namespace WilliamSmithE.DynamicJson
 
         /// <summary>
         /// Converts a sequence of objects into a sequence of dynamic values by selecting
-        /// only elements that are <see cref="SafeDynamicObject"/> instances.
+        /// only elements that are <see cref="DynamicJsonObject"/> instances.
         /// </summary>
         /// <param name="source">
         /// The sequence of objects to evaluate.
         /// </param>
         /// <returns>
         /// An <see cref="IEnumerable{T}"/> containing only the dynamic objects backed by
-        /// <see cref="SafeDynamicObject"/> instances.
+        /// <see cref="DynamicJsonObject"/> instances.
         /// </returns>
         /// <remarks>
-        /// Elements that are not <see cref="SafeDynamicObject"/> instances are skipped.
+        /// Elements that are not <see cref="DynamicJsonObject"/> instances are skipped.
         /// This method never throws and yields no values if <paramref name="source"/> is
         /// <c>null</c>.
         /// </remarks>
@@ -114,20 +114,20 @@ namespace WilliamSmithE.DynamicJson
 
             foreach (var item in source)
             {
-                if (item is SafeDynamicObject sdo)
+                if (item is DynamicJsonObject sdo)
                     yield return sdo;
             }
         }
 
         /// <summary>
         /// Returns the first element in the sequence that is a
-        /// <see cref="SafeDynamicObject"/>, or <c>null</c> if none exist.
+        /// <see cref="DynamicJsonObject"/>, or <c>null</c> if none exist.
         /// </summary>
         /// <param name="source">
         /// The sequence to search.
         /// </param>
         /// <returns>
-        /// The first <see cref="SafeDynamicObject"/> in the sequence, or <c>null</c>
+        /// The first <see cref="DynamicJsonObject"/> in the sequence, or <c>null</c>
         /// if no such element is found.
         /// </returns>
         /// <remarks>
@@ -142,7 +142,7 @@ namespace WilliamSmithE.DynamicJson
 
             foreach (var item in source)
             {
-                if (item is SafeDynamicObject sdo)
+                if (item is DynamicJsonObject sdo)
                     return sdo;
             }
 
@@ -161,7 +161,7 @@ namespace WilliamSmithE.DynamicJson
                             dict[prop.Name] = ConvertJsonElement(prop.Value);
                         }
 
-                        return new SafeDynamicObject(dict);
+                        return new DynamicJsonObject(dict);
                     }
 
                 case JsonValueKind.Array:
@@ -173,7 +173,7 @@ namespace WilliamSmithE.DynamicJson
                             list.Add(ConvertJsonElement(arrItem));
                         }
 
-                        return new SafeDynamicList(list);
+                        return new DynamicJsonList(list);
                     }
 
                 case JsonValueKind.String:

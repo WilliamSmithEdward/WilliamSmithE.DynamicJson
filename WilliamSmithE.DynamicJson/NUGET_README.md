@@ -94,7 +94,7 @@ string usersJson = """
 
 var dynObj = usersJson.ToDynamic();
 
-var roleNames =
+var names =
     ((SafeDynamicList)dynObj.users)
         .AsEnumerable()
         .Where(u =>
@@ -107,9 +107,9 @@ var roleNames =
         .OrderBy(x => x)
         .ToList();
 
-foreach (var roleName in roleNames)
+foreach (var name in names)
 {
-    Console.WriteLine(roleName);
+    Console.WriteLine(name);
 }
 ```
 

@@ -203,19 +203,23 @@ namespace WilliamSmithE.DynamicJson
         /// This method enables dynamic index access such as <c>list[0]</c> on a
         /// <see cref="DynamicJsonList"/>.  
         /// The index must be a single non-negative integer within the bounds of the list.
-        /// Invalid indexes do not throw exceptions.
+        /// Invalid indexes throw exceptions.
         /// </remarks>
         public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object? result)
         {
-            if (indexes.Length == 1 && indexes[0] is int idx && idx >= 0 && idx < items.Count)
-            {
+            // Validate index argument
+            if (indexes.Length != 1 || indexes[0] is not int idx)
+                throw new ArgumentException("DynamicJsonList indexer requires a single integer index.");
 
-                result = items[idx];
-                return true;
-            }
+            // Bounds check with explicit error message
+            if (idx < 0 || idx >= items.Count)
+                throw new IndexOutOfRangeException(
+                    $"Index {idx} is out of range for this DynamicJsonList. Valid indices are 0 to {items.Count - 1}."
+                );
 
-            result = null;
-            return false;
+            // Return the value when valid
+            result = items[idx];
+            return true; // IMPORTANT: never return false
         }
 
         /// <summary>

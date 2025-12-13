@@ -62,14 +62,56 @@ var firstRole = dyn.profile.roles.First();
 Console.WriteLine(firstRole.roleName);           // Admin
 ```
 
-### LINQ works naturally
+## 🔍 LINQ works naturally
+
+Use the `.AsEnumerable()` extension method to enable LINQ queries on `SafeDynamicList` objects.
+
+> ⚠️ When using `.AsEnumerable(...)` with a dynamic list, cast the source to `SafeDynamicList` so the lambda can be bound correctly by the C# compiler.
+
+Example:
 
 ```csharp
-var widgets = string.Join(", ", dyn.preferences.dashboardWidgets);
-Console.WriteLine(widgets);                      // inbox, projects, metrics
-```
+string usersJson = """
+{
+  "users": [
+    {
+      "name": "Alice",
+      "roles": [
+        { "roleName": "Admin", "permissions": [ "read", "write", "delete" ] },
+        { "roleName": "User",  "permissions": [ "read" ] }
+      ]
+    },
+    {
+      "name": "Bob",
+      "roles": [
+        { "roleName": "Developer", "permissions": [ "read", "commit" ] },
+        { "roleName": "User",      "permissions": [ "read" ] }
+      ]
+    }
+  ]
+}
+""";
 
----
+var dynObj = usersJson.ToDynamic();
+
+var roleNames =
+    ((SafeDynamicList)dynObj.users)
+        .AsEnumerable()
+        .Where(u =>
+            ((SafeDynamicList)u.roles)
+                .AsEnumerable()
+                .Any(r => r.roleName == "Admin")
+        )
+        .Select(u => (string)u.name)
+        .Distinct()
+        .OrderBy(x => x)
+        .ToList();
+
+foreach (var roleName in roleNames)
+{
+    Console.WriteLine(roleName);
+}
+```
 
 ## 🎯 Mapping to POCOs
 

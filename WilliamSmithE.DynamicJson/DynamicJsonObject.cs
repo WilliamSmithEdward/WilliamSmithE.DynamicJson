@@ -27,7 +27,6 @@ namespace WilliamSmithE.DynamicJson
     /// </remarks>
     public class DynamicJsonObject(IDictionary<string, object?> values) : DynamicObject
     {
-        private readonly IDictionary<string, object?> values = values ?? throw new ArgumentNullException(nameof(values));
         /// <summary>
         /// Gets a read-only view of the key/value pairs contained in this
         /// <see cref="DynamicJsonObject"/>.
@@ -51,33 +50,36 @@ namespace WilliamSmithE.DynamicJson
             ?? throw new InvalidOperationException("Backing store is not a dictionary.");
 
         /// <summary>
-        /// Attempts to retrieve a member value dynamically using case-insensitive
-        /// property name matching.
+        /// Attempts to retrieve a dynamic member value using a sanitized and
+        /// case-insensitive lookup against this object's property dictionary.
         /// </summary>
         /// <param name="binder">
-        /// Provides information about the member being accessed, including the
-        /// requested member name.
+        /// Provides information about the requested member, including the name
+        /// specified by the dynamic call site.
         /// </param>
         /// <param name="result">
         /// When this method returns, contains the value associated with the
-        /// requested member if a matching key exists; otherwise <c>null</c>.
+        /// requested member if found; otherwise <c>null</c>.
         /// </param>
         /// <returns>
-        /// Always returns <c>true</c>, indicating that member access was handled,
-        /// even when the requested property does not exist.
+        /// Always returns <c>true</c>, indicating that the dynamic member access
+        /// was handled, even when no matching key exists.
         /// </returns>
         /// <remarks>
-        /// This method searches the underlying value dictionary using case-insensitive
-        /// comparison. If a matching property is found, its value is returned. If not,
-        /// <c>null</c> is assigned to <paramref name="result"/>, ensuring that dynamic
-        /// access never throws for missing members. Callers requiring strict behavior
-        /// should use explicit accessors instead of dynamic member access.
+        /// The requested member name is sanitized to match the canonical key
+        /// format used internally (letters and digits only). The lookup is
+        /// performed in a case-insensitive manner. Missing members do not throw;
+        /// they return <c>null</c> to preserve safe dynamic behavior.
         /// </remarks>
         public override bool TryGetMember(GetMemberBinder binder, out object? result)
         {
-            foreach (var kvp in values)
+            ArgumentNullException.ThrowIfNull(binder);
+
+            var targetKey = binder.Name.Sanitize();
+
+            foreach (var kvp in Properties)
             {
-                if (kvp.Key.Equals(binder.Name, StringComparison.OrdinalIgnoreCase))
+                if (kvp.Key.Equals(targetKey, StringComparison.OrdinalIgnoreCase))
                 {
                     result = kvp.Value;
                     return true;
@@ -89,57 +91,63 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Attempts to set a dynamic member value using the specified binder name.
+        /// Attempts to assign a value to a dynamic member using a sanitized key
+        /// and case-insensitive storage.
         /// </summary>
         /// <param name="binder">
-        /// Provides information about the member being assigned, including the
-        /// member name.
+        /// Contains information about the member being assigned, including the
+        /// name supplied at the dynamic call site.
         /// </param>
         /// <param name="value">
-        /// The value to assign to the member.
+        /// The value to associate with the specified member name.
         /// </param>
         /// <returns>
-        /// Always returns <c>true</c>.
+        /// Always returns <c>true</c>, indicating the assignment was handled.
         /// </returns>
         /// <remarks>
-        /// This method stores the provided value in the underlying dictionary using
-        /// the binder's member name as the key. Assignment is case-sensitive and
-        /// overwrites any existing entry for the same key.
+        /// The member name is sanitized before being stored, ensuring that all keys
+        /// conform to the canonical format used internally (letters and digits only).
+        /// Dynamic assignment never throws due to missing members; new entries are
+        /// added to the underlying dictionary as needed.
         /// </remarks>
         public override bool TrySetMember(SetMemberBinder binder, object? value)
         {
             ArgumentNullException.ThrowIfNull(binder);
 
-            values[binder.Name] = value;
+            values[binder.Name.Sanitize()] = value;
             return true;
         }
 
         /// <summary>
-        /// Attempts to map the values of this <see cref="DynamicJsonObject"/> to a new
-        /// instance of the specified type <typeparamref name="T"/>.
+        /// Maps this dynamic JSON object to a new instance of the type
+        /// <typeparamref name="T"/> using sanitized, case-insensitive property
+        /// name matching.
         /// </summary>
         /// <typeparam name="T">
-        /// The target class type to map into. Must have a public parameterless constructor.
+        /// The target class type to map into. Must have a public parameterless
+        /// constructor.
         /// </typeparam>
         /// <returns>
-        /// A new instance of <typeparamref name="T"/> with matching writable properties
-        /// populated from this object's values. If a property cannot be mapped or converted,
-        /// it is skipped. Never returns <c>null</c>.
+        /// A new instance of <typeparamref name="T"/> with any matching writable
+        /// properties populated from this object's values. This method never
+        /// returns <c>null</c>.
         /// </returns>
         /// <remarks>
         /// <para>
-        /// Property matching is performed using case-insensitive comparison between the names
-        /// of the target type's public instance properties and the keys of this object's
-        /// underlying value dictionary.
+        /// Property names on the target type are sanitized before comparison to
+        /// ensure consistent matching with the sanitized keys stored internally
+        /// for this dynamic JSON object. Matching is performed in a
+        /// case-insensitive manner.
         /// </para>
         /// <para>
-        /// If a property value is <c>null</c>, the corresponding target property is explicitly
-        /// set to <c>null</c>. For non-null values, the method attempts assignment using either
-        /// direct type compatibility or <see cref="Convert.ChangeType(object?, Type)"/>.
+        /// For each matching property, the value is assigned either directly when
+        /// the runtime type is compatible, or via <see cref="Convert.ChangeType(object?, Type)"/>
+        /// when a conversion is required. If a value is <c>null</c>, the
+        /// corresponding property is explicitly set to <c>null</c>.
         /// </para>
         /// <para>
-        /// Conversion errors are swallowed silently to preserve best-effort behavior. Only
-        /// writable properties on the target type are considered.
+        /// Conversion errors are allowed to propagate to the caller. For a safe,
+        /// exception-free variant, use a corresponding TryAsType method instead.
         /// </para>
         /// </remarks>
         public T? AsType<T>() where T : class, new()
@@ -159,7 +167,7 @@ namespace WilliamSmithE.DynamicJson
                 foreach (var kvp in Properties)
                 {
 
-                    if (!kvp.Key.Equals(targetProp.Name, StringComparison.OrdinalIgnoreCase))
+                    if (!kvp.Key.Equals(targetProp.Name.Sanitize(), StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -174,29 +182,19 @@ namespace WilliamSmithE.DynamicJson
 
                     var targetType = Nullable.GetUnderlyingType(targetProp.PropertyType) ?? targetProp.PropertyType;
 
-                    try
+
+                    if (targetType.IsInstanceOfType(value))
                     {
 
-                        if (targetType.IsInstanceOfType(value))
-                        {
-
-                            targetProp.SetValue(result, value);
-                        }
-
-                        else
-                        {
-
-                            var converted = Convert.ChangeType(value, targetType);
-                            targetProp.SetValue(result, converted);
-                        }
+                        targetProp.SetValue(result, value);
                     }
 
-                    catch
+                    else
                     {
-                        // best-effort: if conversion fails, just skip this property
-                    }
 
-                    break;
+                        var converted = Convert.ChangeType(value, targetType);
+                        targetProp.SetValue(result, converted);
+                    }
                 }
             }
 
@@ -204,23 +202,25 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Attempts to map this <see cref="DynamicJsonObject"/> to an instance of the
-        /// specified type <typeparamref name="T"/>.
+        /// Attempts to map this dynamic JSON object to a new instance of the type
+        /// <typeparamref name="T"/> without throwing exceptions.
         /// </summary>
         /// <typeparam name="T">
         /// The target class type to map into. Must have a public parameterless constructor.
         /// </typeparam>
         /// <param name="result">
-        /// When this method returns, contains the populated <typeparamref name="T"/> instance
-        /// if the mapping succeeds; otherwise <c>null</c>.
+        /// When this method returns, contains the populated instance of
+        /// <typeparamref name="T"/> if mapping succeeds; otherwise <c>null</c>.
         /// </param>
         /// <returns>
-        /// <c>true</c> if mapping was successful; otherwise <c>false</c>.
+        /// <c>true</c> if the mapping was successful and <paramref name="result"/> is not
+        /// <c>null</c>; otherwise <c>false</c>.
         /// </returns>
         /// <remarks>
         /// This method wraps <see cref="AsType{T}"/> in a safe, exception-free form.
-        /// Any conversion or assignment errors are silently handled, ensuring that
-        /// dynamic-to-POCO mapping can be attempted without risk of throwing exceptions.
+        /// Any conversion, assignment, or type mismatch errors are caught and treated
+        /// as a failed mapping attempt. For stricter behavior, call
+        /// <c>AsType&lt;T&gt;</c> directly.
         /// </remarks>
         public bool TryAsType<T>(out T? result) where T : class, new()
         {
@@ -291,5 +291,13 @@ namespace WilliamSmithE.DynamicJson
         {
             return JsonSerializer.Serialize(ToRawObject());
         }
+
+        private readonly Dictionary<string, object?> values =
+        values?.ToDictionary(
+            kvp => kvp.Key.Sanitize(),
+            kvp => kvp.Value,
+            StringComparer.OrdinalIgnoreCase
+        )
+        ?? throw new ArgumentNullException(nameof(values));
     }
 }

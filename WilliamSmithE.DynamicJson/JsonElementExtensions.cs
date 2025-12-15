@@ -99,6 +99,28 @@ namespace WilliamSmithE.DynamicJson
             return null;
         }
 
+        /// <summary>
+        /// Recursively converts a <see cref="JsonElement"/> into its corresponding
+        /// CLR representation, producing <see cref="DynamicJsonObject"/> for JSON
+        /// objects and <see cref="DynamicJsonList"/> for arrays.
+        /// </summary>
+        /// <param name="element">
+        /// The JSON element to convert.
+        /// </param>
+        /// <returns>
+        /// A CLR value representing the JSON structure:
+        /// <list type="bullet">
+        /// <item><description><see cref="DynamicJsonObject"/> for JSON objects</description></item>
+        /// <item><description><see cref="DynamicJsonList"/> for JSON arrays</description></item>
+        /// <item><description><see cref="string"/>, <see cref="long"/>,
+        /// <see cref="double"/>, <see cref="decimal"/>, <see cref="bool"/>,
+        /// <see cref="DateTime"/>, or <c>null</c> for primitive JSON values</description></item>
+        /// </list>
+        /// </returns>
+        /// <remarks>
+        /// When converting JSON objects, duplicate property names are resolved by
+        /// appending numeric suffixes (e.g., <c>Name</c>, <c>Name2</c>, <c>Name3</c>).
+        /// </remarks>
         private static object? ConvertJsonElement(JsonElement element)
         {
             switch (element.ValueKind)
@@ -109,7 +131,20 @@ namespace WilliamSmithE.DynamicJson
 
                     foreach (var prop in element.EnumerateObject())
                     {
-                        dict[prop.Name] = ConvertJsonElement(prop.Value);
+                        var value = ConvertJsonElement(prop.Value);
+
+                        var baseName = prop.Name;
+                        var finalName = baseName;
+
+                        int i = 2;
+
+                        while (dict.ContainsKey(finalName))
+                        {
+                            finalName = baseName + i.ToString();
+                            i++;
+                        }
+
+                        dict[finalName] = value;
                     }
 
                     return new DynamicJsonObject(dict);

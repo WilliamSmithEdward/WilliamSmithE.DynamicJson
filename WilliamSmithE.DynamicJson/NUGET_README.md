@@ -84,6 +84,37 @@ dynObj.FirstName  // "Harry"
 dynObj.OrderId    // 12345
 ```
 
+### De-duplication of keys
+After keys are sanitized, duplicates are automatically renamed by adding a numeric suffix. 
+
+The first occurrence keeps its name, and any additional collisions become key2, key3, and so on. This ensures every property remains unique without losing any values.
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var jsonString = """
+{
+    "name": "John Doe",
+    "age": 30,
+    "job-title": "Analyst",
+    "jobTitle": "Senior Analyst",
+    "skills": ["C#", "JavaScript", "SQL"],
+    "address": {
+        "street": "123 Main St",
+        "city": "Anytown",
+        "zip": "12345"
+    }
+}
+""";
+
+var dynObj = jsonString.ToDynamic();
+
+Console.WriteLine(dynObj.JobTitle);             // Analyst
+Console.WriteLine(dynObj.JobTitle2);            // Senior Analyst
+```
+
+---
+
 ## 🧭 Dynamic Navigation
 
 ```csharp

@@ -276,28 +276,40 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Serializes this <see cref="DynamicJsonObject"/> to a JSON string.
+        /// Initializes the internal value dictionary by sanitizing keys,
+        /// ensuring case-insensitive lookup, and automatically resolving
+        /// duplicate keys by appending a numeric suffix.
         /// </summary>
-        /// <returns>
-        /// A JSON representation of the object produced by converting all values
-        /// to their raw CLR equivalents.
-        /// </returns>
         /// <remarks>
-        /// This method first converts the dynamic object into a raw dictionary via
-        /// <see cref="ToRawObject"/> and then serializes it using
-        /// <see cref="System.Text.Json.JsonSerializer"/>.
+        /// Each key in the source dictionary is sanitized. If the sanitized
+        /// key already exists, a numeric counter is appended to create a
+        /// unique key (e.g., <c>Name</c>, <c>Name2</c>, <c>Name3</c>).
         /// </remarks>
-        public string ToJson()
-        {
-            return JsonSerializer.Serialize(ToRawObject());
-        }
-
+        /// <param name="values">
+        /// The source dictionary used to build the internal value map.
+        /// Must not be <c>null</c>.
+        /// </param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="values"/> is <c>null</c>.
+        /// </exception>
         private readonly Dictionary<string, object?> values =
-        values?.ToDictionary(
-            kvp => kvp.Key.Sanitize(),
-            kvp => kvp.Value,
-            StringComparer.OrdinalIgnoreCase
-        )
-        ?? throw new ArgumentNullException(nameof(values));
+            values?.Aggregate(
+                new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase),
+                (dict, kvp) =>
+                {
+                    var baseKey = kvp.Key.Sanitize();
+                    var key = baseKey;
+
+                    int counter = 2;
+                    while (dict.ContainsKey(key))
+                    {
+                        key = $"{baseKey}{counter}";
+                        counter++;
+                    }
+
+                    dict[key] = kvp.Value;
+                    return dict;
+                })
+            ?? throw new ArgumentNullException(nameof(values));
     }
 }

@@ -276,6 +276,25 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
+        /// Attempts to retrieve a value associated with the specified
+        /// property name from the underlying JSON object.
+        /// </summary>
+        /// <param name="name">
+        /// The property name to look up. Comparison is case-insensitive.
+        /// </param>
+        /// <param name="value">
+        /// When this method returns, contains the value associated with
+        /// <paramref name="name"/> if it exists; otherwise <c>null</c>.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if the property exists; otherwise <c>false</c>.
+        /// </returns>
+        public bool TryGetValue(string name, out object? value)
+        {
+            return values.TryGetValue(name, out value);
+        }
+
+        /// <summary>
         /// Initializes the internal value dictionary by sanitizing keys,
         /// ensuring case-insensitive lookup, and automatically resolving
         /// duplicate keys by appending a numeric suffix.

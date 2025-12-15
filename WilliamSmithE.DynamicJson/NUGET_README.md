@@ -89,6 +89,7 @@ After keys are sanitized, duplicates are automatically renamed by adding a numer
 
 The first occurrence keeps its name, and any additional collisions become key2, key3, and so on. This ensures every property remains unique without losing any values.
 
+Scalar properties:
 ```csharp
 using WilliamSmithE.DynamicJson;
 
@@ -111,6 +112,36 @@ var dynObj = jsonString.ToDynamic();
 
 Console.WriteLine(dynObj.JobTitle);             // Analyst
 Console.WriteLine(dynObj.JobTitle2);            // Senior Analyst
+```
+
+Object / Array properties:
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var jsonString = """
+{
+    "name": "John Doe",
+    "skills": ["C#", "JavaScript", "SQL"],
+    "Skills": ["Excel", "PowerBI", "Tableau"],
+    "Skills": ["SqlServer", "Kubernetes", "AWS"],
+    "Credentials": {
+        "username": "johndoe",
+        "password": "securepassword123"
+    },
+    "Credentials": {
+        "apiKey": "ABCD"
+    }
+}
+""";
+
+var dyn = jsonString.ToDynamic();
+
+Console.WriteLine(string.Join(", ", dyn.Skills));                                   // C#, JavaScript, SQL
+Console.WriteLine(string.Join(", ", dyn.Skills2));                                  // Excel, PowerBI, Tableau
+Console.WriteLine(string.Join(", ", dyn.Skills3));                                  // SqlServer, Kubernetes, AWS
+
+Console.WriteLine(dyn.Credentials.Username + " | " + dyn.Credentials.Password);     // johndoe | securepassword123
+Console.WriteLine(dyn.Credentials2.ApiKey);                                         // ABCD
 ```
 
 ---

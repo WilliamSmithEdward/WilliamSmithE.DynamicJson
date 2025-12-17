@@ -25,7 +25,6 @@ namespace WilliamSmithE.DynamicJson
     /// </para>
     /// </remarks>
     public class DynamicJsonObject(IDictionary<string, object?> values, Func<char, bool>? sanitizationFilter = null) : DynamicObject
-
     {
         /// <summary>
         /// Gets a read-only view of the key/value pairs contained in this
@@ -208,7 +207,6 @@ namespace WilliamSmithE.DynamicJson
 
                     else
                     {
-
                         var converted = Convert.ChangeType(value, targetType);
                         targetProp.SetValue(result, converted);
                     }

@@ -14,29 +14,34 @@ namespace WilliamSmithE.DynamicJson
     public static class DynamicJson
     {
         /// <summary>
-        /// Parses a JSON string and converts the root element into a dynamic
-        /// representation backed by <see cref="DynamicJsonObject"/> or
-        /// <see cref="DynamicJsonList"/>.
+        /// Parses a JSON string and converts the root element into a dynamic representation,
+        /// optionally applying a custom key sanitization filter.
         /// </summary>
         /// <param name="json">
-        /// The JSON string to parse.
+        /// The JSON string to parse. Must not be <c>null</c>, empty, or whitespace.
+        /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate that determines which characters are retained when sanitizing
+        /// JSON object property names. If <c>null</c>, the default alphanumeric sanitizer is used.
+        /// The filter is applied consistently throughout all nested objects.
         /// </param>
         /// <returns>
-        /// A dynamic object representing the root JSON structure. This will be a
-        /// <see cref="DynamicJsonObject"/> for JSON objects or a
-        /// <see cref="DynamicJsonList"/> for JSON arrays.
+        /// A dynamic representation of the root JSON structure. This will be a
+        /// <see cref="DynamicJsonObject"/> for JSON objects or a <see cref="DynamicJsonList"/>
+        /// for JSON arrays.
         /// </returns>
         /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="json"/> is <c>null</c>, empty, or whitespace.
+        /// Thrown when <paramref name="json"/> is <c>null</c>, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">
-        /// Thrown when the JSON root element is not an object or an array.
+        /// Thrown when the root JSON element is not an object or an array.
         /// </exception>
         /// <remarks>
-        /// This method standardizes JSON parsing and dynamic conversion, ensuring that
-        /// objects and arrays are handled uniformly via <see cref="JsonElementExtensions.AsDynamic(System.Text.Json.JsonElement)"/>.
+        /// This method provides the primary entry point for converting raw JSON text into
+        /// the dynamic JSON system. The optional sanitization filter allows callers to control
+        /// how JSON object keys are normalized during conversion.
         /// </remarks>
-        public static dynamic FromJson(string json)
+        public static dynamic FromJson(string json, Func<char, bool>? sanitizationFilter = null)
         {
             if (string.IsNullOrWhiteSpace(json))
                 throw new ArgumentNullException(nameof(json));
@@ -46,8 +51,8 @@ namespace WilliamSmithE.DynamicJson
 
             return root.ValueKind switch
             {
-                JsonValueKind.Object => root.AsDynamic(),
-                JsonValueKind.Array => root.AsDynamic(),
+                JsonValueKind.Object => root.AsDynamic(sanitizationFilter),
+                JsonValueKind.Array => root.AsDynamic(sanitizationFilter),
                 _ => throw new InvalidOperationException(
                         $"Unsupported JSON root type: {root.ValueKind}")
             };

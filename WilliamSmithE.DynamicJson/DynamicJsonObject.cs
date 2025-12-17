@@ -1,6 +1,5 @@
 ﻿using System.Dynamic;
 using System.Reflection;
-using System.Text.Json;
 
 namespace WilliamSmithE.DynamicJson
 {
@@ -25,7 +24,8 @@ namespace WilliamSmithE.DynamicJson
     /// suitable for serialization.
     /// </para>
     /// </remarks>
-    public class DynamicJsonObject(IDictionary<string, object?> values) : DynamicObject
+    public class DynamicJsonObject(IDictionary<string, object?> values, Func<char, bool>? sanitizationFilter = null) : DynamicObject
+
     {
         /// <summary>
         /// Gets a read-only view of the key/value pairs contained in this
@@ -75,7 +75,7 @@ namespace WilliamSmithE.DynamicJson
         {
             ArgumentNullException.ThrowIfNull(binder);
 
-            var targetKey = binder.Name.Sanitize();
+            var targetKey = binder.Name;
 
             foreach (var kvp in Properties)
             {
@@ -114,7 +114,7 @@ namespace WilliamSmithE.DynamicJson
         {
             ArgumentNullException.ThrowIfNull(binder);
 
-            values[binder.Name.Sanitize()] = value;
+            values[binder.Name] = value;
             return true;
         }
 
@@ -150,7 +150,7 @@ namespace WilliamSmithE.DynamicJson
         /// exception-free variant, use a corresponding TryAsType method instead.
         /// </para>
         /// </remarks>
-        public T? AsType<T>() where T : class, new()
+        public T? AsType<T>(Func<char, bool>? sanitizationFilter = null) where T : class, new()
         {
             var result = new T();
 
@@ -167,7 +167,7 @@ namespace WilliamSmithE.DynamicJson
                 foreach (var kvp in Properties)
                 {
 
-                    if (!kvp.Key.Equals(targetProp.Name.Sanitize(), StringComparison.OrdinalIgnoreCase))
+                    if (!kvp.Key.Equals(targetProp.Name.Sanitize(sanitizationFilter), StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -316,7 +316,7 @@ namespace WilliamSmithE.DynamicJson
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase),
                 (dict, kvp) =>
                 {
-                    var baseKey = kvp.Key.Sanitize();
+                    var baseKey = kvp.Key.Sanitize(sanitizationFilter);
                     var key = baseKey;
 
                     int counter = 2;

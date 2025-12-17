@@ -14,35 +14,41 @@ namespace WilliamSmithE.DynamicJson
     {
         /// <summary>
         /// Maps the values of the specified <see cref="DynamicJsonObject"/> to a new instance
-        /// of the type <typeparamref name="T"/> using sanitized, case-insensitive key matching.
+        /// of the type <typeparamref name="T"/>, using optional key sanitization for property matching.
         /// </summary>
         /// <typeparam name="T">
         /// The target class type to map into. Must have a public parameterless constructor.
         /// </typeparam>
         /// <param name="source">
-        /// The <see cref="DynamicJsonObject"/> whose values will be used for mapping.
+        /// The <see cref="DynamicJsonObject"/> whose values will be used for mapping. Must not be <c>null</c>.
+        /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate that determines which characters are retained when sanitizing
+        /// target property names for comparison with JSON keys. If <c>null</c>, the default
+        /// alphanumeric sanitizer is applied.
         /// </param>
         /// <returns>
-        /// A new instance of <typeparamref name="T"/> with matching writable properties
-        /// populated from the dynamic object's values. Never returns <c>null</c>.
+        /// A new instance of <typeparamref name="T"/> with matching writable properties populated
+        /// from the dynamic object's values. Never returns <c>null</c>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="source"/> is <c>null</c>.
+        /// </exception>
         /// <remarks>
         /// <para>
-        /// Property matching is performed using case-insensitive comparison between the
-        /// sanitized names of the target type's public instance properties and the sanitized
-        /// keys exposed by <see cref="DynamicJsonObject.Properties"/>.
+        /// Property matching is performed by sanitizing each target property name using the
+        /// specified <paramref name="sanitizationFilter"/> (or the default sanitizer when
+        /// <c>null</c>) and comparing the result to the keys exposed by
+        /// <see cref="DynamicJsonObject.Properties"/> in a case-insensitive manner.
         /// </para>
         /// <para>
-        /// If a value is <c>null</c>, the corresponding target property is explicitly set
-        /// to <c>null</c>. For non-null values, the method attempts assignment using either
-        /// direct type compatibility or <see cref="Convert.ChangeType(object?, Type)"/>.
-        /// </para>
-        /// <para>
-        /// Conversion errors are allowed to propagate to the caller. For a safe,
-        /// exception-free variant, use <c>TryAsType&lt;T&gt;</c> instead.
+        /// If a value is <c>null</c>, the corresponding property is explicitly set to <c>null</c>.
+        /// For non-null values, the method attempts assignment using either direct type compatibility
+        /// or <see cref="Convert.ChangeType(object?, Type)"/> when a conversion is required.
+        /// Conversion errors are allowed to propagate to the caller.
         /// </para>
         /// </remarks>
-        public static T? AsType<T>(this DynamicJsonObject source)
+        public static T? AsType<T>(this DynamicJsonObject source, Func<char, bool>? sanitizationFilter = null)
             where T : class, new()
         {
             ArgumentNullException.ThrowIfNull(source);
@@ -61,7 +67,7 @@ namespace WilliamSmithE.DynamicJson
                 foreach (var kvp in source.Properties)
                 {
 
-                    if (!kvp.Key.Equals(targetProp.Name.Sanitize(), StringComparison.OrdinalIgnoreCase))
+                    if (!kvp.Key.Equals(targetProp.Name.Sanitize(sanitizationFilter), StringComparison.OrdinalIgnoreCase))
                     {
                         continue;
                     }
@@ -94,42 +100,45 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Attempts to map the specified <see cref="DynamicJsonObject"/> to a new instance
-        /// of the type <typeparamref name="T"/> without throwing exceptions.
+        /// Attempts to map the specified <see cref="DynamicJsonObject"/> to a new instance of
+        /// the type <typeparamref name="T"/>, using optional key sanitization for property matching,
+        /// without throwing exceptions.
         /// </summary>
         /// <typeparam name="T">
         /// The target class type to map into. Must have a public parameterless constructor.
         /// </typeparam>
         /// <param name="source">
         /// The <see cref="DynamicJsonObject"/> whose values will be used for mapping.
+        /// Must not be <c>null</c>.
         /// </param>
         /// <param name="result">
         /// When this method returns, contains the populated <typeparamref name="T"/> instance
         /// if the mapping succeeds; otherwise <c>null</c>.
         /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate that determines which characters are retained when sanitizing
+        /// target property names for comparison with JSON keys. If <c>null</c>, the default
+        /// alphanumeric sanitizer is applied.
+        /// </param>
         /// <returns>
-        /// <c>true</c> if mapping was successful and <paramref name="result"/> is non-<c>null</c>;
+        /// <c>true</c> if mapping succeeds and <paramref name="result"/> is not <c>null</c>;
         /// otherwise <c>false</c>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="source"/> is <c>null</c>.
+        /// </exception>
         /// <remarks>
-        /// <para>
-        /// This method wraps <see cref="AsType{T}(DynamicJsonObject)"/> in a safe,
-        /// exception-free form. Any conversion or assignment errors are silently handled,
-        /// ensuring that dynamic-to-POCO mapping can be attempted without risk of throwing
-        /// exceptions.
-        /// </para>
-        /// <para>
-        /// Callers that require strict behavior can use <see cref="AsType{T}(DynamicJsonObject)"/>
-        /// directly instead of this method.
-        /// </para>
+        /// This method wraps <see cref="AsType{T}(DynamicJsonObject, Func{char, bool}?)"/> in
+        /// a safe, exception-free form. Any conversion or assignment errors are caught and
+        /// treated as a failed mapping attempt.
         /// </remarks>
-        public static bool TryAsType<T>(this DynamicJsonObject source, out T? result) where T : class, new()
+        public static bool TryAsType<T>(this DynamicJsonObject source, out T? result, Func<char, bool>? sanitizationFilter = null) where T : class, new()
         {
             ArgumentNullException.ThrowIfNull(source);
 
             try
             {
-                var mapped = source.AsType<T>();
+                var mapped = source.AsType<T>(sanitizationFilter);
 
                 if (mapped != null)
                 {
@@ -149,8 +158,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Attempts to map the specified value to a new instance of the type
-        /// <typeparamref name="T"/> when possible.
+        /// Attempts to map the specified value to an instance of the type <typeparamref name="T"/>.
         /// </summary>
         /// <typeparam name="T">
         /// The target class type to map into. Must have a public parameterless constructor.
@@ -165,16 +173,15 @@ namespace WilliamSmithE.DynamicJson
         /// <typeparamref name="T"/>, the same instance is returned; otherwise <c>null</c>.
         /// </returns>
         /// <remarks>
-        /// This method provides a convenient way to consume values that may already be
-        /// strongly typed or may originate from a dynamic JSON mapping, without requiring
-        /// the caller to branch on the underlying type.
+        /// This method provides a convenient way to consume values that may originate from either
+        /// dynamic JSON structures or already typed objects without requiring the caller to branch
+        /// on the underlying type.
         /// </remarks>
-        public static T? AsType<T>(this object? value)
-        where T : class, new()
+        public static T? AsType<T>(this object? value, Func<char, bool>? sanitizationFilter = null) where T : class, new()
         {
             if (value is DynamicJsonObject sdo)
             {
-                return sdo.AsType<T>();
+                return sdo.AsType<T>(sanitizationFilter);
             }
 
             if (value is T alreadyTyped)

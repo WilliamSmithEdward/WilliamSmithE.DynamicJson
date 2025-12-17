@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>1.0.9</Version>
+    <Version>1.0.10</Version>
     <Title>WilliamSmithE.DynamicJson</Title>
     <Copyright>William Smith 2025</Copyright>
     <PackageProjectUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</PackageProjectUrl>
@@ -17,6 +17,7 @@
     <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>A simple, lightweight way to work with JSON as dynamic objects or lists, while still giving you type safety when you need it.</Description>
+    <PackageTags>dynamic;json;dynamicjson;linq;dynamic-linq;system.text.json;json;dynamic</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

@@ -482,6 +482,140 @@ Console.WriteLine(finalJson);
 
 ---
 
+## 🧩 Dynamic JSON Diff & Patch
+
+### What “Diff” Does
+
+Diff compares two JSON values and produces a minimal change object that describes only what is different between them. It does not return the entire JSON structure. This represents the smallest set of updates needed to turn the first object into the second.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+dynamic before = """
+{
+  "Name": "Alice",
+  "Age": 30,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+dynamic after = """
+{
+  "Name": "Alicia",
+  "Age": 31,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+// Compute the minimal diff between the two JSON values
+dynamic patch = DynamicJson.DiffDynamic(before, after);
+
+Console.WriteLine(DynamicJson.ToJson(patch));
+
+// Output:
+// {
+//   "Name": "Alicia",
+//   "Age": 31
+// }
+```
+
+### What “Patch” Does
+
+Patch takes an original JSON value and a diff, and applies those changes to produce an updated JSON value.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+dynamic before = """
+{
+  "Name": "Alice",
+  "Age": 30,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+dynamic after = """
+{
+  "Name": "Alicia",
+  "Age": 31,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+// First compute the diff
+dynamic patch = DynamicJson.DiffDynamic(before, after);
+
+// Apply the diff to the original
+dynamic patched = DynamicJson.ApplyPatchDynamic(before, patch);
+
+Console.WriteLine(DynamicJson.ToJson(patched));
+
+// Output:
+// {
+//   "Name": "Alicia",
+//   "Age": 31,
+//   "City": "Boston"
+// }
+```
+
+---
+
+## Merging Dynamic JSON Objects
+
+Merge combines two JSON values into a single result by overlaying the fields from the second value onto the first. Unlike ApplyPatch, which applies only changes, merge performs a full union of both JSON structures.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+dynamic left = """
+{
+  "Name": "Alice",
+  "Address": { "City": "Boston" },
+  "Tags": ["user"]
+}
+""".ToDynamic();
+
+dynamic right = """
+{
+  "Age": 30,
+  "Address": { "Zip": "02110" },
+  "Tags": ["admin"]
+}
+""".ToDynamic();
+
+dynamic merged = DynamicJson.MergeDynamic(left, right);
+
+Console.WriteLine(DynamicJson.ToJson(merged));
+
+// Output:
+// {
+//   "Name": "Alice",
+//   "Address": { "City": "Boston", "Zip": "02110" },
+//   "Tags": ["admin"],
+//   "Age": 30
+// }
+
+dynamic mergedConcat = DynamicJson.MergeDynamic(left, right, concatArrays: true);
+
+Console.WriteLine(DynamicJson.ToJson(mergedConcat));
+
+// Output with concatArrays = true:
+// {
+//   "Name": "Alice",
+//   "Address": { "City": "Boston", "Zip": "02110" },
+//   "Tags": ["user", "admin"],
+//   "Age": 30
+// }
+```
+
+---
+
 ## 📄 License
 
 MIT License. See `LICENSE` file for details.

@@ -525,6 +525,8 @@ Console.WriteLine(DynamicJson.ToJson(patch));
 
 Patch takes an original JSON value and a diff, and applies those changes to produce an updated JSON value.
 
+Example:
+
 ```csharp
 using WilliamSmithE.DynamicJson;
 

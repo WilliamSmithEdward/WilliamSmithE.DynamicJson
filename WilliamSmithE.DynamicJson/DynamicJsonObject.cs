@@ -1,5 +1,6 @@
 ﻿using System.Dynamic;
 using System.Reflection;
+using System.Text.Json;
 
 namespace WilliamSmithE.DynamicJson
 {
@@ -308,6 +309,17 @@ namespace WilliamSmithE.DynamicJson
         {
             return values.TryGetValue(name, out value);
         }
+
+        public string ToJson()
+        {
+            return JsonSerializer.Serialize(ToRawObject());
+        }
+
+        /// <summary>
+        /// Creates a deep copy of this <see cref="DynamicJsonObject"/>.
+        /// </summary>
+        /// <returns>A new instance of <see cref="DynamicJsonObject"/> that is a copy of the original.</returns>
+        public DynamicJsonObject Clone() => DynamicJson.FromJson(ToJson());
 
         /// <summary>
         /// Initializes the internal value dictionary by sanitizing keys,

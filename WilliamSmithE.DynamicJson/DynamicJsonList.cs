@@ -66,91 +66,6 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Returns the first element in the list mapped to the specified type
-        /// <typeparamref name="T"/>.
-        /// </summary>
-        /// <typeparam name="T">
-        /// The target class type to map into. Must have a public parameterless constructor.
-        /// </typeparam>
-        /// <param name="nullOnConversionError">
-        /// If <c>true</c>, mapping errors return <c>null</c> instead of throwing an exception.
-        /// </param>
-        /// <returns>
-        /// The first element successfully mapped to <typeparamref name="T"/>.
-        /// </returns>
-        /// <exception cref="InvalidOperationException">
-        /// Thrown when the list is empty, or when the first element cannot be converted
-        /// to <typeparamref name="T"/> and <paramref name="nullOnConversionError"/> is <c>false</c>.
-        /// </exception>
-        /// <remarks>
-        /// This method examines the list in order and attempts to map the first
-        /// <see cref="DynamicJsonObject"/> it encounters to the specified type using
-        /// <see cref="DynamicJsonObject.AsType{T}"/>.
-        /// Non-object items are ignored.
-        /// </remarks>
-        public T? First<T>(bool nullOnConversionError = false) where T : class, new()
-        {
-            foreach (var item in items)
-            {
-                if (item is DynamicJsonObject sdo)
-                {
-                    var mapped = sdo.AsType<T>();
-
-                    if (mapped != null)
-                        return mapped;
-
-                    if (nullOnConversionError)
-                        return null;
-
-                    throw new InvalidOperationException($"The first element in the list could not be converted to type {typeof(T).Name}.");
-                }
-            }
-
-            throw new InvalidOperationException("Sequence contains no elements.");
-        }
-
-        /// <summary>
-        /// Returns the first element in the list that can be mapped to the specified
-        /// type <typeparamref name="T"/>, or <c>null</c> if no such element exists.
-        /// </summary>
-        /// <typeparam name="T">
-        /// The target class type to map into. Must have a public parameterless constructor.
-        /// </typeparam>
-        /// <param name="nullOnConversionError">
-        /// If <c>true</c>, mapping errors return <c>null</c> instead of skipping the element.
-        /// </param>
-        /// <returns>
-        /// The first successfully mapped <typeparamref name="T"/> instance, or <c>null</c>
-        /// if none can be mapped.
-        /// </returns>
-        /// <remarks>
-        /// This method iterates through the list and attempts to map each
-        /// <see cref="DynamicJsonObject"/> using <see cref="DynamicJsonObject.AsType{T}"/>.
-        /// Non-object items are ignored.
-        /// 
-        /// Unlike <c>First{T}</c>, this method never throws when the list is empty or
-        /// when no elements can be converted.
-        /// </remarks>
-        public T? FirstOrDefault<T>(bool nullOnConversionError = false) where T : class, new()
-        {
-            foreach (var item in items)
-            {
-                if (item is DynamicJsonObject sdo)
-                {
-                    var mapped = sdo.AsType<T>();
-
-                    if (mapped != null)
-                        return mapped;
-
-                    if (nullOnConversionError)
-                        return null;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Converts all <see cref="DynamicJsonObject"/> elements in the list into
         /// instances of the specified type <typeparamref name="T"/>.
         /// </summary>
@@ -186,6 +101,44 @@ namespace WilliamSmithE.DynamicJson
 
             return result;
         }
+
+        /// <summary>
+        /// Converts all primitive (scalar) values in the list into a strongly typed
+        /// <see cref="List{T}"/>.
+        /// </summary>
+        /// <typeparam name="T">
+        /// The target scalar type to extract from the list. Only elements whose runtime
+        /// type matches <typeparamref name="T"/> are included.
+        /// </typeparam>
+        /// <returns>
+        /// A <see cref="List{T}"/> containing all elements in the list that can be
+        /// assigned to <typeparamref name="T"/>. Elements of other types are ignored.
+        /// </returns>
+        /// <remarks>
+        /// This method is intended for JSON arrays that contain primitive values such as
+        /// strings, numbers, or booleans. It does not attempt type conversion and does
+        /// not process <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/>
+        /// instances.
+        /// <para>
+        /// For example, given a JSON array <c>["user", "admin"]</c>, calling
+        /// <c>ToScalarList&lt;string&gt;()</c> will return a list containing the two
+        /// strings.
+        /// </para>
+        /// </remarks>
+        public List<T> ToScalarList<T>()
+        {
+            var list = new List<T>();
+
+            foreach (var item in items)
+            {
+                if (item is T value)
+                    list.Add(value);
+            }
+
+            return list;
+        }
+
+        
 
         /// <summary>
         /// Attempts to access an element in the list via dynamic index notation.
@@ -269,6 +222,12 @@ namespace WilliamSmithE.DynamicJson
         {
             return JsonSerializer.Serialize(ToRawArray());
         }
+
+        /// <summary>
+        /// Creates a deep copy of this <see cref="DynamicJsonList"/>.
+        /// </summary>
+        /// <returns>A new instance of <see cref="DynamicJsonList"/> that is a copy of the original.</returns>
+        public DynamicJsonList Clone() => DynamicJson.FromJson(ToJson());
 
         /// <summary>
         /// Returns an enumerator that iterates through the elements of the

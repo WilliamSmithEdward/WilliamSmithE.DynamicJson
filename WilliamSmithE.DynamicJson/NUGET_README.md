@@ -525,6 +525,8 @@ Console.WriteLine(DynamicJson.ToJson(patch));
 
 Patch takes an original JSON value and a diff, and applies those changes to produce an updated JSON value.
 
+Example:
+
 ```csharp
 using WilliamSmithE.DynamicJson;
 
@@ -557,6 +559,58 @@ Console.WriteLine(DynamicJson.ToJson(patched));
 //   "Name": "Alicia",
 //   "Age": 31,
 //   "City": "Boston"
+// }
+```
+
+---
+
+## Merging Dynamic JSON Objects
+
+Merge combines two JSON values into a single result by overlaying the fields from the second value onto the first. Unlike ApplyPatch, which applies only changes, merge performs a full union of both JSON structures.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+dynamic left = """
+{
+  "Name": "Alice",
+  "Address": { "City": "Boston" },
+  "Tags": ["user"]
+}
+""".ToDynamic();
+
+dynamic right = """
+{
+  "Age": 30,
+  "Address": { "Zip": "02110" },
+  "Tags": ["admin"]
+}
+""".ToDynamic();
+
+dynamic merged = DynamicJson.MergeDynamic(left, right);
+
+Console.WriteLine(DynamicJson.ToJson(merged));
+
+// Output:
+// {
+//   "Name": "Alice",
+//   "Address": { "City": "Boston", "Zip": "02110" },
+//   "Tags": ["admin"],
+//   "Age": 30
+// }
+
+dynamic mergedConcat = DynamicJson.MergeDynamic(left, right, concatArrays: true);
+
+Console.WriteLine(DynamicJson.ToJson(mergedConcat));
+
+// Output with concatArrays = true:
+// {
+//   "Name": "Alice",
+//   "Address": { "City": "Boston", "Zip": "02110" },
+//   "Tags": ["user", "admin"],
+//   "Age": 30
 // }
 ```
 

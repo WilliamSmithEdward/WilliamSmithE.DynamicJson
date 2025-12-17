@@ -213,5 +213,59 @@ namespace WilliamSmithE.DynamicJson
         {
             return DynamicJsonDiff.ApplyPatchDynamic(original, patch, sanitizationFilter);
         }
+
+        /// <summary>
+        /// Merges two JSON-like values by combining their fields into a new
+        /// JSON structure.
+        /// </summary>
+        /// <param name="left">
+        /// The base value. Its fields are used as the starting point.
+        /// </param>
+        /// <param name="right">
+        /// The overlay value. Its fields override or extend those from
+        /// <paramref name="left"/>.
+        /// </param>
+        /// <returns>
+        /// A new raw CLR structure representing the merged result.
+        /// </returns>
+        public static object? Merge(object? left, object? right)
+        {
+            return DynamicJsonMerge.Merge(left, right);
+        }
+
+        /// <summary>
+        /// Merges two JSON-like values and returns the result as a dynamic
+        /// JSON structure.
+        /// </summary>
+        /// <param name="left">
+        /// The base value. Its fields are used as the starting point.
+        /// </param>
+        /// <param name="right">
+        /// The overlay value. Its fields override or extend those from
+        /// <paramref name="left"/>.
+        /// </param>
+        /// <param name="concatArrays">
+        /// When <c>true</c>, arrays present in both values are concatenated
+        /// (left elements followed by right elements). When <c>false</c>,
+        /// arrays from <paramref name="right"/> replace arrays from
+        /// <paramref name="left"/>.
+        /// </param>
+        /// <param name="sanitizationFilter">
+        /// Optional predicate controlling key sanitization in the resulting
+        /// dynamic JSON wrapper. When <c>null</c>, the default alphanumeric
+        /// sanitizer is used.
+        /// </param>
+        /// <returns>
+        /// A dynamic JSON representation of the merged result, or <c>null</c>
+        /// when the merged value is <c>null</c>.
+        /// </returns>
+        public static dynamic? MergeDynamic(
+            object? left,
+            object? right,
+            bool concatArrays = false,
+            Func<char, bool>? sanitizationFilter = null)
+        {
+            return DynamicJsonMerge.MergeDynamic(left, right, concatArrays, sanitizationFilter);
+        }
     }
 }

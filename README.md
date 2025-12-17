@@ -53,12 +53,27 @@ var dynObj = json.ToDynamic();
 
 ---
 
+## 🧭 Dynamic Navigation
+
+### Use dynamic json object like it was POCO:
+
+```csharp
+Console.WriteLine(dynObj.id);                       // 67
+Console.WriteLine(dynObj.name);                     // John Doe
+Console.WriteLine(dynObj.profile.email);            // john@doe.com
+
+var firstRole = dynObj.profile.roles.First();
+Console.WriteLine(firstRole.roleName);              // Admin
+```
+
+---
+
 ## 🔑 Key Sanitization (How Property Names Are Matched)
 
 DynamicJson automatically normalizes all JSON property names using a
 simple rule:
 
-**Only letters and digits are kept. All other characters are removed.**
+**By default: Only letters and digits are kept. All other characters are removed. (A–Z, a–z, 0–9)**
 
 Examples:
 
@@ -84,10 +99,26 @@ dynObj.FirstName  // "Harry"
 dynObj.OrderId    // 12345
 ```
 
-### De-duplication of keys
-After keys are sanitized, duplicates are automatically renamed by adding a numeric suffix. 
+### Custom sanitization delegate
 
-The first occurrence keeps its name, and any additional collisions become key2, key3, and so on. This ensures every property remains unique without losing any values.
+You can supply a `Func<char, bool>` delegate that determines which characters are retained:
+
+```csharp
+// Example: allow letters, digits, underscores, and hyphens
+Func<char, bool> filter = c =>
+    char.IsLetterOrDigit(c) || c == '_' || c == '-';
+
+var obj = new DynamicJsonObject(values, filter);
+
+var sanitized = originalKey.Sanitize(filter);
+```
+
+### De-duplication of keys
+After keys are sanitized, duplicates are automatically renamed by adding a numeric suffix:
+
+-> The first occurrence keeps its name, and any additional collisions become key2, key3, and so on. This ensures every property remains unique without losing any values.
+
+-> The order of properties is preserved as they appear in the original JSON.
 
 Scalar properties:
 ```csharp
@@ -142,19 +173,6 @@ Console.WriteLine(string.Join(", ", dyn.Skills3));                              
 
 Console.WriteLine(dyn.Credentials.Username + " | " + dyn.Credentials.Password);     // johndoe | securepassword123
 Console.WriteLine(dyn.Credentials2.ApiKey);                                         // ABCD
-```
-
----
-
-## 🧭 Dynamic Navigation
-
-```csharp
-Console.WriteLine(dynObj.id);                       // 67
-Console.WriteLine(dynObj.name);                     // John Doe
-Console.WriteLine(dynObj.profile.email);            // john@doe.com
-
-var firstRole = dynObj.profile.roles.First();
-Console.WriteLine(firstRole.roleName);              // Admin
 ```
 
 ---

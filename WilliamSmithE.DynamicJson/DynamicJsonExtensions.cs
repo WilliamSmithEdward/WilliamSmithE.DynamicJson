@@ -11,22 +11,28 @@
     public static class DynamicJsonExtensions
     {
         /// <summary>
-        /// Converts a JSON string into a dynamic representation backed by
-        /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/>.
+        /// Converts a JSON string into a dynamic JSON representation, optionally applying
+        /// a custom key sanitization filter.
         /// </summary>
         /// <param name="json">
-        /// The JSON string to convert.
+        /// The JSON string to convert. Must not be <c>null</c>, empty, or whitespace.
+        /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate that determines which characters are retained when sanitizing
+        /// JSON object property names. If <c>null</c>, the default alphanumeric sanitizer is used.
         /// </param>
         /// <returns>
-        /// A dynamic object representing the parsed JSON structure.
+        /// A dynamic representation of the parsed JSON structure, such as a
+        /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/>.
         /// </returns>
         /// <remarks>
-        /// This extension method provides a convenient shorthand for calling
-        /// <see cref="DynamicJson.FromJson(string)"/>.
+        /// This is a convenience wrapper around
+        /// <see cref="DynamicJson.FromJson(string, Func{char, bool}?)"/>, enabling fluent
+        /// conversion from JSON strings to dynamic structures.
         /// </remarks>
-        public static dynamic ToDynamic (this string json)
+        public static dynamic ToDynamic (this string json, Func<char, bool>? sanitizationFilter = null)
         {
-            return DynamicJson.FromJson(json);
+            return DynamicJson.FromJson(json, sanitizationFilter);
         }
     }
 }

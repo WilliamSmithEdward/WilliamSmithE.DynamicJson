@@ -15,20 +15,29 @@ namespace WilliamSmithE.DynamicJson
     public static class JsonElementExtensions
     {
         /// <summary>
-        /// Converts a list of <see cref="JsonElement"/> values into dynamic JSON objects
-        /// backed by <see cref="DynamicJsonObject"/> and <see cref="DynamicJsonList"/>.
+        /// Converts a list of <see cref="JsonElement"/> values into dynamic JSON structures,
+        /// optionally applying a custom key sanitization filter.
         /// </summary>
         /// <param name="items">
-        /// The list of <see cref="JsonElement"/> instances to convert.
+        /// The collection of <see cref="JsonElement"/> instances to convert. Must not be <c>null</c>.
+        /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate that determines which characters are retained when sanitizing
+        /// JSON object property names. If <c>null</c>, the default alphanumeric sanitizer is used.
         /// </param>
         /// <returns>
-        /// A list of dynamic representations of the provided JSON elements. Elements that
-        /// cannot be converted are skipped.
+        /// A list of dynamic representations of the provided JSON elements, such as
+        /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/>.
+        /// Elements that cannot be converted are skipped.
         /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="items"/> is <c>null</c>.
         /// </exception>
-        public static List<dynamic> AsDynamic(this List<JsonElement> items)
+        /// <remarks>
+        /// Each <see cref="JsonElement"/> in the sequence is recursively transformed, and the
+        /// specified sanitization filter is applied consistently throughout all nested objects.
+        /// </remarks>
+        public static List<dynamic> AsDynamic(this List<JsonElement> items, Func<char, bool>? sanitizationFilter = null)
         {
             ArgumentNullException.ThrowIfNull(items);
 
@@ -36,7 +45,7 @@ namespace WilliamSmithE.DynamicJson
 
             foreach (var item in items)
             {
-                var converted = ConvertJsonElement(item);
+                var converted = ConvertJsonElement(item, sanitizationFilter);
 
                 if (converted != null)
                 {
@@ -48,25 +57,29 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Converts a single <see cref="JsonElement"/> into a dynamic object backed by
-        /// a <see cref="DynamicJsonObject"/>.
+        /// Converts a single <see cref="JsonElement"/> into a dynamic JSON representation,
+        /// optionally applying a custom key sanitization filter.
         /// </summary>
         /// <param name="item">
         /// The <see cref="JsonElement"/> to convert.
         /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate used to determine which characters are retained when
+        /// sanitizing JSON object property names. If <c>null</c>, the default alphanumeric
+        /// sanitizer is applied.
+        /// </param>
         /// <returns>
-        /// A dynamic representation of the JSON element, typically a
-        /// <see cref="DynamicJsonObject"/>.
+        /// A dynamic representation of the JSON element, typically a <see cref="DynamicJsonObject"/>
+        /// or <see cref="DynamicJsonList"/>, depending on the structure of the underlying JSON.
         /// </returns>
         /// <remarks>
-        /// This method wraps the element in a temporary list and delegates to
-        /// <see cref="AsDynamic(System.Collections.Generic.List{System.Text.Json.JsonElement})"/>
-        /// to ensure consistent conversion behavior with list-based processing.
+        /// This method wraps the element in a temporary list and delegates to the list-based
+        /// <c>AsDynamic</c> overload to ensure consistent sanitization and conversion behavior.
         /// </remarks>
-        public static dynamic AsDynamic(this JsonElement item)
+        public static dynamic AsDynamic(this JsonElement item, Func<char, bool>? sanitizationFilter = null)
         {
             var list = new List<JsonElement> { item };
-            return list.AsDynamic()[0];
+            return list.AsDynamic(sanitizationFilter)[0];
         }
 
         /// <summary>
@@ -100,28 +113,48 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Recursively converts a <see cref="JsonElement"/> into its corresponding
-        /// CLR representation, producing <see cref="DynamicJsonObject"/> for JSON
-        /// objects and <see cref="DynamicJsonList"/> for arrays.
+        /// Recursively converts a <see cref="JsonElement"/> into its corresponding CLR
+        /// representation, producing <see cref="DynamicJsonObject"/> for JSON objects and
+        /// <see cref="DynamicJsonList"/> for JSON arrays.
         /// </summary>
         /// <param name="element">
-        /// The JSON element to convert.
+        /// The <see cref="JsonElement"/> to convert.
+        /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate used to determine which characters are retained when
+        /// sanitizing JSON object property names. This filter is passed through to all
+        /// nested <see cref="DynamicJsonObject"/> instances. If <c>null</c>, default
+        /// alphanumeric sanitization is applied.
         /// </param>
         /// <returns>
         /// A CLR value representing the JSON structure:
         /// <list type="bullet">
-        /// <item><description><see cref="DynamicJsonObject"/> for JSON objects</description></item>
-        /// <item><description><see cref="DynamicJsonList"/> for JSON arrays</description></item>
-        /// <item><description><see cref="string"/>, <see cref="long"/>,
-        /// <see cref="double"/>, <see cref="decimal"/>, <see cref="bool"/>,
-        /// <see cref="DateTime"/>, or <c>null</c> for primitive JSON values</description></item>
+        /// <item><description>
+        /// <see cref="DynamicJsonObject"/> for JSON objects
+        /// </description></item>
+        /// <item><description>
+        /// <see cref="DynamicJsonList"/> for JSON arrays
+        /// </description></item>
+        /// <item><description>
+        /// <see cref="string"/>, <see cref="long"/>,
+        /// <see cref="double"/>, <see cref="decimal"/>,
+        /// <see cref="bool"/>, <see cref="DateTime"/>, or <c>null</c>
+        /// for primitive values
+        /// </description></item>
         /// </list>
         /// </returns>
         /// <remarks>
-        /// When converting JSON objects, duplicate property names are resolved by
-        /// appending numeric suffixes (e.g., <c>Name</c>, <c>Name2</c>, <c>Name3</c>).
+        /// <para>
+        /// When converting object properties, duplicate JSON keys are resolved by appending
+        /// numeric suffixes (e.g., <c>Name</c>, <c>Name2</c>, <c>Name3</c>).
+        /// </para>
+        /// <para>
+        /// The sanitization filter is not applied during dictionary construction here.
+        /// Instead, it is passed to <see cref="DynamicJsonObject"/>, which performs
+        /// sanitization on the finalized property names to ensure consistent behavior.
+        /// </para>
         /// </remarks>
-        private static object? ConvertJsonElement(JsonElement element)
+        private static object? ConvertJsonElement(JsonElement element, Func<char, bool>? sanitizationFilter)
         {
             switch (element.ValueKind)
             {
@@ -131,7 +164,7 @@ namespace WilliamSmithE.DynamicJson
 
                     foreach (var prop in element.EnumerateObject())
                     {
-                        var value = ConvertJsonElement(prop.Value);
+                        var value = ConvertJsonElement(prop.Value, sanitizationFilter);
 
                         var baseName = prop.Name;
                         var finalName = baseName;
@@ -147,7 +180,7 @@ namespace WilliamSmithE.DynamicJson
                         dict[finalName] = value;
                     }
 
-                    return new DynamicJsonObject(dict);
+                    return new DynamicJsonObject(dict, sanitizationFilter);
                 }
 
                 case JsonValueKind.Array:
@@ -156,7 +189,7 @@ namespace WilliamSmithE.DynamicJson
 
                     foreach (var arrItem in element.EnumerateArray())
                     {
-                        list.Add(ConvertJsonElement(arrItem));
+                        list.Add(ConvertJsonElement(arrItem, sanitizationFilter));
                     }
 
                     return new DynamicJsonList(list);

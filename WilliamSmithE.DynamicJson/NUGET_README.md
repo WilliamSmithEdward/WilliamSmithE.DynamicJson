@@ -7,16 +7,38 @@ This library converts JSON into `DynamicJsonObject` and `DynamicJsonList`, enabl
 
 ## ✨ Features
 
-- `json.ToDynamic()` → returns a dynamic object or dynamic list  
-- Safe property access with case-insensitive matching  
-- Lists behave like `IEnumerable` (LINQ ready)  
-- Automatic conversion of JSON scalars → .NET primitives  
-- Best-effort `AsType<T>()` for mapping to POCO classes  
-- Safe property access with case-insensitive matching  
-- Missing properties return null (never throws)  
-- List indexing behaves like normal .NET indexers and throws clear exceptions on invalid indices
-- Round-trip serialization support (`ToJson`)  
-- Clean, minimal API surface
+- **`json.ToDynamic()` entry point**  
+  Converts JSON into a dynamic object or list that behaves predictably in .NET.
+
+- **Straightforward property access**  
+  Case-insensitive lookups with safe null returns for missing fields.
+
+- **Lists integrate naturally with .NET**  
+  Dynamic lists support indexing and can be used directly with LINQ.
+
+- **Automatic handling of JSON primitives**  
+  Strings, numbers, booleans, and null values map directly to .NET types.
+
+- **Object mapping with `AsType<T>()`**  
+  Converts dynamic objects into POCOs using simple reflection-based mapping.
+
+- **Scalar list conversion (`ToScalarList<T>()`)**  
+  Extracts arrays of primitives (e.g., strings, ints) into strongly typed lists.
+
+- **Object list conversion (`ToList<T>()`)**  
+  Converts arrays of JSON objects into `List<T>` without extra serializer configuration.
+
+- **Clear, predictable error behavior**  
+  Missing properties return null; invalid casts are skipped; index errors throw normally.
+
+- **Round-trip JSON support (`ToJson()`)**  
+  Modified dynamic objects can be serialized back to JSON cleanly.
+
+- **Minimal, focused API surface**  
+  Provides practical capabilities without a large configuration model.
+
+- **Diff / Patch / Merge utilities**  
+  Built-in helpers for comparing and combining JSON structures.
 
 ---
 

@@ -55,7 +55,7 @@ var dynObj = json.ToDynamic();
 
 ## 🧭 Dynamic Navigation
 
-### Use dynamic json object like it was POCO:
+### Use a dynamic json object like it was a POCO / CLR object:
 
 ```csharp
 Console.WriteLine(dynObj.id);                       // 67
@@ -349,7 +349,7 @@ Console.WriteLine(dynObj.profile.roles[5]);
 // throws IndexOutOfRangeException with a clear message
 ```
 
-Mapping:
+Mapping to POCOs:
 
 ```csharp
 public class Role
@@ -361,32 +361,30 @@ public class Role
 var roles = dynObj.profile.roles.ToList<Role>();
 ```
 
----
-
-## 📌 Note on `.AsEnumerable()` and Dynamic Lists
-
-`DynamicJsonList` supports direct iteration and dynamic indexing.  
-
-The `.AsEnumerable()` extension is required **only** to help the C# compiler bind LINQ queries that involve `dynamic` values.
-
-It does *not* change how the list behaves.
-
-Examples:
+`.ToScalarList()`:
 
 ```csharp
-// Direct iteration works without AsEnumerable()
-foreach (var role in dynObj.profile.roles)
-{
-    Console.WriteLine(role.roleName);
-}
+using WilliamSmithE.DynamicJson;
 
-// AsEnumerable is required only when using LINQ over dynamic items
-var adminRoles =
-    ((DynamicJsonList)dynObj.profile.roles)
-        .AsEnumerable()
-        .Where(r => r.roleName == "Admin")
-        .ToList();
+var dyn = """
+{
+  "Users": [
+    { "Name": "Alice", "Age": 30, "Locations": ["Boston", "Chicago"] },
+    { "Name": "Bob",   "Age": 25, "Locations": ["New York", "Los Angeles"] }
+  ]
+}
+""".ToDynamic();
+
+Console.WriteLine((
+    (List<string>)dyn                   // Cast to List<string>
+        .Users                          // Access Users array
+        .First()                        // Get the first user
+        .Locations                      // Access Locations array
+        .ToScalarList<string>())        // Convert to List<string>    
+    .Skip(1)                            // Get the second location
+    .First());                          // Output: Chicago
 ```
+
 ---
 
 ## 📘 Example End-to-End
@@ -564,7 +562,7 @@ Console.WriteLine(DynamicJson.ToJson(patched));
 
 ---
 
-## Merging Dynamic JSON Objects
+## 🔀 Merging Dynamic JSON Objects
 
 Merge combines two JSON values into a single result by overlaying the fields from the second value onto the first. Unlike ApplyPatch, which applies only changes, merge performs a full union of both JSON structures.
 
@@ -612,6 +610,33 @@ Console.WriteLine(DynamicJson.ToJson(mergedConcat));
 //   "Tags": ["user", "admin"],
 //   "Age": 30
 // }
+```
+
+---
+
+## 🧬 Cloning a DynamicJson Object / List
+
+The `Clone` method creates a deep copy of the `DynamicJson` object, including all nested structures. This allows you to work with a copy of the data without affecting the original object.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+dynamic original = """
+{
+  "Name": "Alice",
+  "Age": 30,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+dynamic copy = original.Clone();
+
+copy.Name = "Alicia";
+
+Console.WriteLine(original.Name);   // Output: Alice
+Console.WriteLine(copy.Name);       // Output: Alicia
 ```
 
 ---

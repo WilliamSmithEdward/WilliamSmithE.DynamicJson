@@ -482,6 +482,86 @@ Console.WriteLine(finalJson);
 
 ---
 
+## 🧩 Dynamic JSON Diff & Patch
+
+### What “Diff” Does
+
+Diff compares two JSON values and produces a minimal change object that describes only what is different between them. It does not return the entire JSON structure. This represents the smallest set of updates needed to turn the first object into the second.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+dynamic before = """
+{
+  "Name": "Alice",
+  "Age": 30,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+dynamic after = """
+{
+  "Name": "Alicia",
+  "Age": 31,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+// Compute the minimal diff between the two JSON values
+dynamic patch = DynamicJson.DiffDynamic(before, after);
+
+Console.WriteLine(DynamicJson.ToJson(patch));
+
+// Output:
+// {
+//   "Name": "Alicia",
+//   "Age": 31
+// }
+```
+
+### What “Patch” Does
+
+Patch takes an original JSON value and a diff, and applies those changes to produce an updated JSON value.
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+dynamic before = """
+{
+  "Name": "Alice",
+  "Age": 30,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+dynamic after = """
+{
+  "Name": "Alicia",
+  "Age": 31,
+  "City": "Boston"
+}
+""".ToDynamic();
+
+// First compute the diff
+dynamic patch = DynamicJson.DiffDynamic(before, after);
+
+// Apply the diff to the original
+dynamic patched = DynamicJson.ApplyPatchDynamic(before, patch);
+
+Console.WriteLine(DynamicJson.ToJson(patched));
+
+// Output:
+// {
+//   "Name": "Alicia",
+//   "Age": 31,
+//   "City": "Boston"
+// }
+```
+
+---
+
 ## 📄 License
 
 MIT License. See `LICENSE` file for details.

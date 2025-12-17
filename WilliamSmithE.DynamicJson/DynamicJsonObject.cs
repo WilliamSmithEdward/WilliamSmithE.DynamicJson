@@ -50,6 +50,23 @@ namespace WilliamSmithE.DynamicJson
             ?? throw new InvalidOperationException("Backing store is not a dictionary.");
 
         /// <summary>
+        /// Gets a newline-separated list of this object's key–value pairs, with each
+        /// entry formatted as <c>Key: Value</c>.
+        /// </summary>
+        /// <value>
+        /// A string where each line represents one property of the
+        /// <see cref="DynamicJsonObject"/> in the format <c>Key: Value</c>.  
+        /// Keys correspond to the sanitized names stored in <see cref="Properties"/>.
+        /// </value>
+        /// <remarks>
+        /// This property provides a shallow textual representation.  
+        /// Nested <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/> values
+        /// are rendered using their default <c>ToString()</c> output.
+        /// </remarks>
+        public string KeyValuePairsAsString =>
+            string.Join(Environment.NewLine, Properties.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
+
+        /// <summary>
         /// Attempts to retrieve a dynamic member value using a sanitized and
         /// case-insensitive lookup against this object's property dictionary.
         /// </summary>

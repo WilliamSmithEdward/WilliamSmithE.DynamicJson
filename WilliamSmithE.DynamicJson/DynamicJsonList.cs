@@ -138,8 +138,6 @@ namespace WilliamSmithE.DynamicJson
             return list;
         }
 
-        
-
         /// <summary>
         /// Attempts to access an element in the list via dynamic index notation.
         /// </summary>

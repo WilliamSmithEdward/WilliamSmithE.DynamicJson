@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	<LangVersion>latest</LangVersion>
@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>1.0.15</Version>
+    <Version>1.0.16</Version>
     <Title>WilliamSmithE.DynamicJson</Title>
     <Copyright>William Smith 2025</Copyright>
     <PackageProjectUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</PackageProjectUrl>
@@ -18,7 +18,7 @@
     <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>A simple, lightweight way to work with JSON as dynamic objects or lists, while still giving you type safety when you need it.</Description>
-    <PackageTags>dynamic;json;dynamicjson;linq;dynamic-linq;system.text.json</PackageTags>
+    <PackageTags>json;dynamic;dynamicjson;dynamic-json;system.text.json;serialization;deserialization;parsing;expando;expandoobject;object-mapping;linq</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

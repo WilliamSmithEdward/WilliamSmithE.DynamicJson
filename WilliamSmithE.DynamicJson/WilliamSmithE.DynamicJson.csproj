@@ -1,15 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net6.0;net7.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+	<LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup>
-    <Version>1.0.14</Version>
+    <Version>1.0.15</Version>
     <Title>WilliamSmithE.DynamicJson</Title>
     <Copyright>William Smith 2025</Copyright>
     <PackageProjectUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</PackageProjectUrl>
@@ -17,18 +18,12 @@
     <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>A simple, lightweight way to work with JSON as dynamic objects or lists, while still giving you type safety when you need it.</Description>
-    <PackageTags>dynamic;json;dynamicjson;linq;dynamic-linq;system.text.json;json;dynamic</PackageTags>
+    <PackageTags>dynamic;json;dynamicjson;linq;dynamic-linq;system.text.json</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="DynamicJsonLogo.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Update="NUGET_README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
+	<None Include="DynamicJsonLogo.png" Pack="true" PackagePath="\" />
+	<None Include="NUGET_README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

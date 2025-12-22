@@ -717,7 +717,7 @@ foreach (var seg in p1)
 // id
 ```
 
-### Dynamic Json Path Aware Diffs
+### DynamicJson Path Aware Diffs
 
 Path-aware diffs allow you to compare two JSON-like values and receive a precise list of changes, each annotated with the exact location where it occurred. 
 
@@ -768,7 +768,7 @@ foreach (var c in changes)
 // Added / metadata | null-> { "lastUpdated":"2025-12-21T00:00:00"}
 ```
 
-### Dynamic Json Path Navigation
+### DynamicJson Path Navigation
 
 JsonPathNavigation bridges JsonPath and the DynamicJson model. It lets you take a path and resolve it against a dynamic JSON value to retrieve whatever exists at that location. 
 
@@ -835,6 +835,109 @@ var pathToUser = JsonPath.Root.Property("user");
 var user = JsonPathNavigation.GetAtPath(json, pathToUser);                          // {"orders":[{"id":10,"price":19.99},{"id":11,"price":5}]}
 
 Console.WriteLine(DynamicJson.ToJson(user));
+```
+
+### Parsing Paths From Strings
+
+JsonPath.Parse converts a canonical path string into a JsonPath instance that behaves exactly like one built fluently in code. 
+
+- Parsed paths can be compared, enumerated, and resolved against DynamicJson values, making them useful for replaying or inspecting paths captured in logs, diagnostics, or configuration. 
+- The parser is intentionally strict and fails fast on invalid or ambiguous input to keep path handling predictable.
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var json = new
+{
+    user = new
+    {
+        orders = new[]
+        {
+            new { id = 10, price = 19.99m }
+        }
+    }
+}.ToDynamic();
+
+var path = JsonPath.Parse("/user/orders[0]/price");
+Console.WriteLine(path); // /user/orders[0]/price
+
+var value = JsonPathNavigation.GetAtPath(json, path);
+Console.WriteLine(DynamicJson.ToJson(value));                   // 19.99
+
+Console.WriteLine(JsonPath.Parse("/").IsRoot);                  // True
+
+try 
+{ 
+    JsonPath.Parse("user/orders"); 
+} 
+
+catch (FormatException) 
+{ 
+    Console.WriteLine("Invalid");                               // Invalid
+}
+
+try 
+{ 
+    JsonPath.Parse("/orders[-1]"); 
+} 
+
+catch (FormatException) 
+{ 
+    Console.WriteLine("Invalid");                               // Invalid
+}
+
+if (JsonPath.TryParse("/user/orders[0]/price", out var path2))
+{
+    var value2 = JsonPathNavigation.GetAtPath(json, path2);
+    Console.WriteLine(DynamicJson.ToJson(value2));              // 19.99
+}
+
+if (!JsonPath.TryParse("/user/order[]", out _))                 // Invalid
+{
+    Console.WriteLine("Invalid");
+}
+```
+
+### Validating Paths Against DynamicJson
+
+IsValidFor provides a simple way to check whether a JSON path can be safely used against a specific DynamicJson value. 
+
+- It verifies not only that a path is syntactically valid, but also that it actually resolves within the given JSON structure. 
+- Useful when paths come from user input, configuration, or diagnostics and you need to ensure they refer to real data before attempting to read or act on them. 
+- By combining parsing and resolution into a single non-throwing check, IsValidFor keeps path validation explicit and predictable without altering the underlying JSON or path semantics.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var json = new
+{
+    user = new
+    {
+        orders = new[]
+        {
+            new { id = 10, price = 19.99m }
+        }
+    }
+}.ToDynamic();
+
+if (JsonPathValidation.IsValidFor(json, "/user/orders[0]/price"))
+{
+    Console.WriteLine("Path exists in this JSON");
+    Console.WriteLine(JsonPathNavigation.GetAtPath(json, "/user/orders[0]/price"));
+    Console.WriteLine();
+}
+
+if (!JsonPathValidation.IsValidFor(json, "/user/order"))
+{
+    Console.WriteLine("Path is valid syntax, but not valid for this JSON");
+}
+
+if (!JsonPathValidation.IsValidFor(json, "/user/orders[2]/price"))
+{
+    Console.WriteLine("Path is valid syntax, but does not exist in this Json");
+}
 ```
 
 ---

@@ -663,6 +663,60 @@ Console.WriteLine(copy.Name);       // Output: Alicia
 
 ---
 
+## 🛤️ JsonPath: A Structural Identifier for JSON Locations
+
+JsonPath is a value type that represents a specific location inside a JSON structure.
+It is designed to be composable, comparable, hashable, and enumerable.
+
+Unlike string paths, a JsonPath is:
+
+- Built structurally
+
+- Compared structurally
+
+- Safe to use as a dictionary key
+
+- Independent of any particular JSON instance
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var p1 = JsonPath.Root.Property("user").Property("orders").Index(0).Property("id");
+var p2 = JsonPath.Root.Property("user").Property("orders").Index(1).Property("id");
+var p3 = JsonPath.Root.Property("user").Property("orders").Index(0).Property("id");
+
+Console.WriteLine(p1);                 // /user/orders[0]/id
+Console.WriteLine(p2);                 // /user/orders[1]/id
+Console.WriteLine(p1 == p3);           // True
+
+var dict = new Dictionary<JsonPath, string>
+{
+    [p1] = "Order0",
+    [p2] = "Order1"
+};
+
+Console.WriteLine(dict[p3]);           // Order0
+
+foreach (var seg in p1)
+{
+    Console.WriteLine(seg.Kind == JsonPath.SegmentKind.Property
+        ? seg.PropertyName
+        : $"[{seg.ArrayIndex}]");
+}
+
+// Expected Output:
+// /user/orders[0]/id
+// /user/orders[1]/id
+// True
+// Order0
+// user
+// orders
+// [0]
+// id
+```
+
+---
+
 ## 📄 License
 
 MIT License. See `LICENSE` file for details.

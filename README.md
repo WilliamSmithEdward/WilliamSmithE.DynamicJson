@@ -663,6 +663,182 @@ Console.WriteLine(copy.Name);       // Output: Alicia
 
 ---
 
+## 🛤️ JsonPath: A Structural Identifier for JSON Locations
+
+JsonPath is a value type that represents a specific location inside a JSON structure.
+It is designed to be composable, comparable, hashable, and enumerable.
+
+Unlike string paths, a JsonPath is:
+
+- Built structurally
+
+- Compared structurally
+
+- Safe to use as a dictionary key
+
+- Independent of any particular JSON instance
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var p1 = JsonPath.Root.Property("user").Property("orders").Index(0).Property("id");
+var p2 = JsonPath.Root.Property("user").Property("orders").Index(1).Property("id");
+var p3 = JsonPath.Root.Property("user").Property("orders").Index(0).Property("id");
+
+Console.WriteLine(p1);                 // /user/orders[0]/id
+Console.WriteLine(p2);                 // /user/orders[1]/id
+Console.WriteLine(p1 == p3);           // True
+
+var dict = new Dictionary<JsonPath, string>
+{
+    [p1] = "Order0",
+    [p2] = "Order1"
+};
+
+Console.WriteLine(dict[p3]);           // Order0
+
+foreach (var seg in p1)
+{
+    Console.WriteLine(seg.Kind == JsonPath.SegmentKind.Property
+        ? seg.PropertyName
+        : $"[{seg.ArrayIndex}]");
+}
+
+// Expected Output:
+// /user/orders[0]/id
+// /user/orders[1]/id
+// True
+// Order0
+// user
+// orders
+// [0]
+// id
+```
+
+### Dynamic Json Path Aware Diffs
+
+Path-aware diffs allow you to compare two JSON-like values and receive a precise list of changes, each annotated with the exact location where it occurred. 
+
+Instead of a single “changed” result, the diff reports added, removed, and modified values along with their JsonPath. This makes JSON mutations explicit, inspectable, and easy to log or reason about, while preserving the library’s existing diff semantics.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var original = new
+{
+    user = new
+    {
+        orders = new[]
+        {
+            new { id = 10, price = 19.99m },
+            new { id = 11, price = 5.00m }
+        },
+        address = new { zip = "94105" }
+    }
+}.ToDynamic();
+
+var updated = new
+{
+    user = new
+    {
+        orders = new[]
+        {
+            new { id = 10, price = 24.99m },      // price changed (but array is atomic)
+            new { id = 11, price = 5.00m }
+        }
+        // address removed
+    },
+    metadata = new { lastUpdated = "2025-12-21" } // added
+}.ToDynamic();
+
+var changes = DynamicJson.DiffWithPaths(original, updated);
+
+foreach (var c in changes)
+{
+    Console.WriteLine($"{c.Kind,-9} {c.Path} | {DynamicJson.ToJson(c.OldValue)} -> {DynamicJson.ToJson(c.NewValue)}");
+}
+
+// Expected output:
+// Modified / user / orders | [{ "id":10,"price":19.99},{ "id":11,"price":5}] -> [{"id":10,"price":24.99},{ "id":11,"price":5}]
+// Removed / user / address | { "zip":"94105"} -> null
+// Added / metadata | null-> { "lastUpdated":"2025-12-21T00:00:00"}
+```
+
+### Dynamic Json Path Navigation
+
+JsonPathNavigation bridges JsonPath and the DynamicJson model. It lets you take a path and resolve it against a dynamic JSON value to retrieve whatever exists at that location. 
+
+- The result may be a primitive, an object, or an array, and it is returned in the same raw form used throughout DynamicJson. 
+- This makes paths produced by diffs or diagnostics immediately usable, allowing you to locate and inspect the exact data they refer to without re-parsing or manual navigation.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var json = new
+{
+    user = new
+    {
+        orders = new[]
+        {
+            new { id = 10, price = 19.99m },
+            new { id = 11, price = 5.00m }
+        }
+    }
+}.ToDynamic();
+
+var pathThatExists = JsonPath.Root
+    .Property("user")
+    .Property("orders")
+    .Index(0)
+    .Property("price");
+
+if (JsonPathNavigation.TryGetAtPath(json, pathThatExists, out object? value))
+    Console.WriteLine(DynamicJson.ToJson(value));                                   // 19.99
+
+Console.WriteLine(JsonPathNavigation.GetAtPath(json, pathThatExists));              // 19.99
+
+var pathThatDoesNotExist = JsonPath.Root
+    .Property("user")
+    .Property("orders")
+    .Index(2)
+    .Property("price");
+
+if (!JsonPathNavigation.TryGetAtPath(json, pathThatDoesNotExist, out object? _))
+    Console.WriteLine("Path not found");                                            // Path not found
+
+try
+{
+    JsonPathNavigation.GetAtPath(json, pathThatDoesNotExist);
+}
+
+catch (KeyNotFoundException)
+{
+    Console.WriteLine("Path not found");                                            // Path not found
+}
+
+var pathToOrders = JsonPath.Root
+    .Property("user")
+    .Property("orders");
+
+var orders = JsonPathNavigation.GetAtPath(json, pathToOrders);
+
+Console.WriteLine(DynamicJson.ToJson(orders));                                      // [{"id":10,"price":19.99},{"id":11,"price":5}]
+
+var pathToUser = JsonPath.Root.Property("user");
+
+var user = JsonPathNavigation.GetAtPath(json, pathToUser);                          // {"orders":[{"id":10,"price":19.99},{"id":11,"price":5}]}
+
+Console.WriteLine(DynamicJson.ToJson(user));
+```
+
+---
+
 ## 📄 License
 
 MIT License. See `LICENSE` file for details.

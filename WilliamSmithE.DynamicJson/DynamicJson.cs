@@ -267,5 +267,30 @@ namespace WilliamSmithE.DynamicJson
         {
             return DynamicJsonMerge.MergeDynamic(left, right, concatArrays, sanitizationFilter);
         }
+
+        /// <summary>
+        /// Computes a path-aware structural diff between two JSON-like values.
+        /// </summary>
+        /// <param name="original">
+        /// The original value to compare. May be a dynamic JSON wrapper or a raw
+        /// CLR value produced by the dynamic JSON pipeline.
+        /// </param>
+        /// <param name="updated">
+        /// The updated value to compare against. May be a dynamic JSON wrapper or a
+        /// raw CLR value produced by the dynamic JSON pipeline.
+        /// </param>
+        /// <returns>
+        /// A read-only list of <see cref="DiffEntry"/> instances describing each
+        /// detected change, including its associated <see cref="JsonPath"/>.
+        /// The list is empty when no differences are found.
+        /// </returns>
+        /// <remarks>
+        /// This method delegates to <see cref="DynamicJsonPathDiff.DiffWithPaths(object?, object?)"/>
+        /// and preserves the same diff semantics as the core dynamic diff logic.
+        /// </remarks>
+        public static IReadOnlyList<DiffEntry> DiffWithPaths(object? original, object? updated)
+        {
+            return DynamicJsonPathDiff.DiffWithPaths(original, updated);
+        }
     }
 }

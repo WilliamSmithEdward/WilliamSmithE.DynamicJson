@@ -253,6 +253,109 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
+        /// Parses a canonical string representation of a JSON path into a <see cref="JsonPath"/>.
+        /// </summary>
+        /// <param name="path">
+        /// A path string such as <c>/user/orders[0]/price</c>.
+        /// </param>
+        /// <returns>
+        /// A <see cref="JsonPath"/> representing the parsed path.
+        /// </returns>
+        /// <exception cref="FormatException">
+        /// Thrown when the path string is malformed or contains unsupported syntax.
+        /// </exception>
+        public static JsonPath Parse(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+                throw new FormatException("Path cannot be null or empty.");
+
+            if (path == "/")
+                return Root;
+
+            if (!path.StartsWith('/'))
+                throw new FormatException("Path must start with '/'.");
+
+            var result = Root;
+            var i = 1;
+
+            while (i < path.Length)
+            {
+                if (path[i] == '[')
+                {
+                    var end = path.IndexOf(']', i);
+
+                    if (end < 0)
+                        throw new FormatException("Unclosed array index.");
+
+                    var number = path.Substring(i + 1, end - i - 1);
+
+                    if (!int.TryParse(number, out var index) || index < 0)
+                        throw new FormatException($"Invalid array index: {number}");
+
+                    result = result.Index(index);
+                    i = end + 1;
+
+                    if (i < path.Length && path[i] == '/')
+                        i++;
+
+                    continue;
+                }
+                else
+                {
+                    // Parse property name
+                    var start = i;
+                    while (i < path.Length && path[i] != '/' && path[i] != '[')
+                        i++;
+
+                    var name = path[start..i];
+
+                    if (name.Length == 0)
+                        throw new FormatException("Empty property name.");
+
+                    result = result.Property(name);
+
+                    if (i < path.Length && path[i] == '/')
+                        i++;
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Attempts to parse a canonical string representation of a JSON path.
+        /// </summary>
+        /// <param name="path">
+        /// The path string to parse, such as <c>/user/orders[0]/price</c>.
+        /// </param>
+        /// <param name="result">
+        /// When this method returns, contains the parsed <see cref="JsonPath"/> if
+        /// parsing succeeded; otherwise, the default value.
+        /// </param>
+        /// <returns>
+        /// <c>true</c> if the path was successfully parsed; otherwise, <c>false</c>.
+        /// </returns>
+        /// <remarks>
+        /// This method provides a non-throwing alternative to <see cref="Parse(string)"/>.
+        /// It returns <c>false</c> when the input is malformed or contains unsupported
+        /// syntax, rather than throwing a <see cref="FormatException"/>.
+        /// </remarks>
+        public static bool TryParse(string path, out JsonPath result)
+        {
+            try
+            {
+                result = Parse(path);
+                return true;
+            }
+
+            catch (FormatException)
+            {
+                result = default;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Represents a single segment within a <see cref="JsonPath"/>,
         /// identifying either an object property or an array index.
         /// </summary>

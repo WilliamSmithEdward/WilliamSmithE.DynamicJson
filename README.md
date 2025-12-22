@@ -739,7 +739,8 @@ var original = new
         },
         address = new { zip = "94105" }
     }
-}.ToDynamic();
+}
+.ToDynamic();
 
 var updated = new
 {
@@ -753,7 +754,8 @@ var updated = new
         // address removed
     },
     metadata = new { lastUpdated = "2025-12-21" } // added
-}.ToDynamic();
+}
+.ToDynamic();
 
 var changes = DynamicJson.DiffWithPaths(original, updated);
 
@@ -790,7 +792,8 @@ var json = new
             new { id = 11, price = 5.00m }
         }
     }
-}.ToDynamic();
+}
+.ToDynamic();
 
 var pathThatExists = JsonPath.Root
     .Property("user")
@@ -856,7 +859,8 @@ var json = new
             new { id = 10, price = 19.99m }
         }
     }
-}.ToDynamic();
+}
+.ToDynamic();
 
 var path = JsonPath.Parse("/user/orders[0]/price");
 Console.WriteLine(path); // /user/orders[0]/price
@@ -920,7 +924,8 @@ var json = new
             new { id = 10, price = 19.99m }
         }
     }
-}.ToDynamic();
+}
+.ToDynamic();
 
 if (JsonPathValidation.IsValidFor(json, "/user/orders[0]/price"))
 {

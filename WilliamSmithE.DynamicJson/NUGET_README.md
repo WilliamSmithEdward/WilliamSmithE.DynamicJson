@@ -678,6 +678,8 @@ Unlike string paths, a JsonPath is:
 
 - Independent of any particular JSON instance
 
+Example:
+
 ```csharp
 using WilliamSmithE.DynamicJson;
 
@@ -713,6 +715,57 @@ foreach (var seg in p1)
 // orders
 // [0]
 // id
+```
+
+### Path Aware Json Diffs
+
+Path-aware diffs allow you to compare two JSON-like values and receive a precise list of changes, each annotated with the exact location where it occurred. 
+
+Instead of a single “changed” result, the diff reports added, removed, and modified values along with their JsonPath. This makes JSON mutations explicit, inspectable, and easy to log or reason about, while preserving the library’s existing diff semantics.
+
+Example:
+
+```csharp
+using WilliamSmithE.DynamicJson;
+
+var original = new
+{
+    user = new
+    {
+        orders = new[]
+        {
+            new { id = 10, price = 19.99m },
+            new { id = 11, price = 5.00m }
+        },
+        address = new { zip = "94105" }
+    }
+}.ToDynamic();
+
+var updated = new
+{
+    user = new
+    {
+        orders = new[]
+        {
+            new { id = 10, price = 24.99m },      // price changed (but array is atomic)
+            new { id = 11, price = 5.00m }
+        }
+        // address removed
+    },
+    metadata = new { lastUpdated = "2025-12-21" } // added
+}.ToDynamic();
+
+var changes = DynamicJson.DiffWithPaths(original, updated);
+
+foreach (var c in changes)
+{
+    Console.WriteLine($"{c.Kind,-9} {c.Path} | {DynamicJson.ToJson(c.OldValue)} -> {DynamicJson.ToJson(c.NewValue)}");
+}
+
+// Expected output:
+// Modified / user / orders | [{ "id":10,"price":19.99},{ "id":11,"price":5}] -> [{"id":10,"price":24.99},{ "id":11,"price":5}]
+// Removed / user / address | { "zip":"94105"} -> null
+// Added / metadata | null-> { "lastUpdated":"2025-12-21T00:00:00"}
 ```
 
 ---

@@ -7,6 +7,7 @@
 	<LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <RepositoryUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</RepositoryUrl>
   </PropertyGroup>
 

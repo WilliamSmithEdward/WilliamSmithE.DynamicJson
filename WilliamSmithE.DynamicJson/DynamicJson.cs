@@ -36,6 +36,9 @@ namespace WilliamSmithE.DynamicJson
         /// <exception cref="InvalidOperationException">
         /// Thrown when the root JSON element is not an object or an array.
         /// </exception>
+        /// <exception cref="JsonException">
+        /// Thrown when <paramref name="json"/> is not valid JSON.
+        /// </exception>
         /// <remarks>
         /// This method provides the primary entry point for converting raw JSON text into
         /// the dynamic JSON system. The optional sanitization filter allows callers to control
@@ -94,8 +97,8 @@ namespace WilliamSmithE.DynamicJson
         /// A raw CLR structure (dictionary, list, primitive, or <c>null</c>) representing
         /// the minimal set of changes required to transform <paramref name="original"/>
         /// into <paramref name="updated"/>.
-        /// 
-        /// Returns <c>null</c> when both values are equivalent.
+        /// Returns <c>null</c> when both values are equivalent, and also when
+        /// <paramref name="updated"/> is <c>null</c>.
         /// </returns>
         /// <remarks>
         /// <para>
@@ -105,6 +108,7 @@ namespace WilliamSmithE.DynamicJson
         /// <item><description>Changed values are included in the diff.</description></item>
         /// <item><description>Missing keys are represented as <c>null</c> entries.</description></item>
         /// <item><description>Unchanged fields are omitted entirely.</description></item>
+        /// <item><description>A field whose value changes to <c>null</c> is omitted too.</description></item>
         /// </list>
         /// <para>
         /// The resulting diff can be applied using <see cref="ApplyPatch(object?, object?)"/>.
@@ -228,6 +232,12 @@ namespace WilliamSmithE.DynamicJson
         /// <returns>
         /// A new raw CLR structure representing the merged result.
         /// </returns>
+        /// <remarks>
+        /// Arrays from <paramref name="right"/> replace arrays from <paramref name="left"/>,
+        /// and a <c>null</c> in <paramref name="right"/> keeps the value from
+        /// <paramref name="left"/>. To concatenate arrays, use
+        /// <see cref="DynamicJsonMerge.Merge(object?, object?, bool)"/>.
+        /// </remarks>
         public static object? Merge(object? left, object? right)
         {
             return DynamicJsonMerge.Merge(left, right);

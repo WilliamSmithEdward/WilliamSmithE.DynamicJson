@@ -2,6 +2,10 @@
 
 namespace WilliamSmithE.DynamicJson
 {
+    /// <summary>
+    /// Provides an extension method for converting any CLR object into the dynamic
+    /// JSON model.
+    /// </summary>
     public static class DynamicJsonObjectExtensions
     {
         /// <summary>
@@ -22,6 +26,10 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="value"/> is <c>null</c>.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        /// Thrown when <paramref name="value"/> does not serialize to a JSON object or array
+        /// (for example a number).
         /// </exception>
         /// <remarks>
         /// <para>

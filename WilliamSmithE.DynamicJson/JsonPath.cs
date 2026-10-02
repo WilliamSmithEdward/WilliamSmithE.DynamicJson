@@ -123,6 +123,11 @@ namespace WilliamSmithE.DynamicJson
         /// are prefixed with <c>/</c> and array indices are enclosed in square brackets.
         /// The root path is represented as <c>/</c>.
         /// </returns>
+        /// <remarks>
+        /// A path that starts with an array index has no leading slash (<c>[0]/name</c>),
+        /// a form <see cref="Parse(string)"/> rejects; <see cref="Parse(string)"/> accepts
+        /// <c>/[0]/name</c>.
+        /// </remarks>
         public override string ToString()
         {
             if (IsRoot)
@@ -330,7 +335,8 @@ namespace WilliamSmithE.DynamicJson
         /// </param>
         /// <param name="result">
         /// When this method returns, contains the parsed <see cref="JsonPath"/> if
-        /// parsing succeeded; otherwise, the default value.
+        /// parsing succeeded; otherwise, the default value, which has no segments array:
+        /// its members throw <see cref="NullReferenceException"/>.
         /// </param>
         /// <returns>
         /// <c>true</c> if the path was successfully parsed; otherwise, <c>false</c>.

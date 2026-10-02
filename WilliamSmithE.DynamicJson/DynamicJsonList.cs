@@ -21,6 +21,10 @@ namespace WilliamSmithE.DynamicJson
     /// to strongly typed models.
     /// </para>
     /// </remarks>
+    /// <param name="items">
+    /// The list's elements. Must not be <c>null</c>, or <see cref="ArgumentNullException"/>
+    /// is thrown.
+    /// </param>
     public class DynamicJsonList(IList<object?> items) : DynamicObject, IEnumerable<object?>
     {
         /// <summary>
@@ -49,8 +53,9 @@ namespace WilliamSmithE.DynamicJson
         /// <remarks>
         /// This implementation supports the dynamic invocation of a <c>First()</c> method,
         /// returning the first element in the list that is either a
-        /// <see cref="DynamicJsonObject"/> or a <see cref="DynamicJsonList"/>.
-        /// All other method names are ignored.
+        /// <see cref="DynamicJsonObject"/> or a <see cref="DynamicJsonList"/>, or <c>null</c>
+        /// when there is none. For any other method name it returns <c>false</c>, so the
+        /// runtime binder throws <c>RuntimeBinderException</c>.
         /// </remarks>
         public override bool TryInvokeMember(InvokeMemberBinder binder, object?[]? args, out object? result)
         {
@@ -73,14 +78,14 @@ namespace WilliamSmithE.DynamicJson
         /// The target class type to map into. Must have a public parameterless constructor.
         /// </typeparam>
         /// <returns>
-        /// A <see cref="List{T}"/> containing all elements that could be successfully
-        /// mapped to <typeparamref name="T"/>.
+        /// A <see cref="List{T}"/> with one mapped instance for each
+        /// <see cref="DynamicJsonObject"/> element.
         /// </returns>
         /// <remarks>
-        /// This method iterates through the list and attempts to map each
+        /// This method iterates through the list and maps each
         /// <see cref="DynamicJsonObject"/> using <see cref="DynamicJsonObject.AsType{T}"/>.
-        /// Non-object items are ignored, and elements that cannot be mapped are skipped
-        /// without throwing exceptions.
+        /// Non-object items are ignored. A value that cannot be converted throws, as it
+        /// does in <see cref="DynamicJsonObject.AsType{T}"/>.
         /// </remarks>
         public List<T> ToList<T>() where T : class, new()
         {
@@ -149,18 +154,22 @@ namespace WilliamSmithE.DynamicJson
         /// integer index.
         /// </param>
         /// <param name="result">
-        /// When this method returns, contains the element at the specified index if the
-        /// index is valid; otherwise <c>null</c>.
+        /// When this method returns, contains the element at the specified index.
         /// </param>
         /// <returns>
-        /// <c>true</c> if the index is valid and the element is returned; otherwise <c>false</c>.
+        /// Always <c>true</c>; an invalid index throws instead of returning <c>false</c>.
         /// </returns>
         /// <remarks>
         /// This method enables dynamic index access such as <c>list[0]</c> on a
-        /// <see cref="DynamicJsonList"/>.  
-        /// The index must be a single non-negative integer within the bounds of the list.
-        /// Invalid indexes throw exceptions.
+        /// <see cref="DynamicJsonList"/>.
+        /// The index must be a single non-negative <see cref="int"/> within the bounds of the list.
         /// </remarks>
+        /// <exception cref="ArgumentException">
+        /// Thrown when there is not exactly one index or the index is not an <see cref="int"/>.
+        /// </exception>
+        /// <exception cref="IndexOutOfRangeException">
+        /// Thrown when the index is negative or not less than <see cref="Count"/>.
+        /// </exception>
         public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object? result)
         {
             // Validate index argument
@@ -225,6 +234,9 @@ namespace WilliamSmithE.DynamicJson
         /// Creates a deep copy of this <see cref="DynamicJsonList"/>.
         /// </summary>
         /// <returns>A new instance of <see cref="DynamicJsonList"/> that is a copy of the original.</returns>
+        /// <remarks>
+        /// The copy is made by serializing to JSON and parsing again with the default sanitizer.
+        /// </remarks>
         public DynamicJsonList Clone() => DynamicJson.FromJson(ToJson());
 
         /// <summary>

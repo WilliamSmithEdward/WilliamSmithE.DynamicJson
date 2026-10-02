@@ -28,7 +28,7 @@ namespace WilliamSmithE.DynamicJson
         /// <returns>
         /// A list of dynamic representations of the provided JSON elements, such as
         /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/>.
-        /// Elements that cannot be converted are skipped.
+        /// JSON <c>null</c> elements are skipped.
         /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="items"/> is <c>null</c>.
@@ -75,6 +75,8 @@ namespace WilliamSmithE.DynamicJson
         /// <remarks>
         /// This method wraps the element in a temporary list and delegates to the list-based
         /// <c>AsDynamic</c> overload to ensure consistent sanitization and conversion behavior.
+        /// Because that overload skips JSON <c>null</c>, a <c>null</c> element throws
+        /// <see cref="ArgumentOutOfRangeException"/>.
         /// </remarks>
         public static dynamic AsDynamic(this JsonElement item, Func<char, bool>? sanitizationFilter = null)
         {
@@ -95,8 +97,11 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <remarks>
         /// This method does not throw if <paramref name="source"/> is <c>null</c>;
-        /// it simply returns <c>null</c>.
-        /// Non-object elements are ignored.
+        /// it returns <c>null</c>.
+        /// Non-object elements are ignored, so on a list of numbers or strings it returns
+        /// <c>null</c>. Because it is an exact match for <see cref="IEnumerable{T}"/> of
+        /// <see cref="object"/>, the compiler picks it over LINQ's <c>Enumerable.First</c>
+        /// for a <see cref="DynamicJsonList"/> and for <c>IEnumerable&lt;dynamic&gt;</c>.
         /// </remarks>
         public static dynamic? First(this IEnumerable<object?> source)
         {

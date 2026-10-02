@@ -39,7 +39,9 @@ namespace WilliamSmithE.DynamicJson
         /// </returns>
         /// <remarks>
         /// This method performs structural navigation only. It does not coerce
-        /// values or validate semantics beyond path resolution.
+        /// values or validate semantics beyond path resolution. Property segments are
+        /// matched against the sanitized keys, ignoring case, and the value is returned in
+        /// its raw form (a primitive, a dictionary or a list).
         /// </remarks>
         public static bool TryGetAtPath(object? root, JsonPath path, out object? value)
         {

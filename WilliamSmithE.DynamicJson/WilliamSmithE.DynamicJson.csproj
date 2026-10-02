@@ -6,19 +6,21 @@
     <Nullable>enable</Nullable>
 	<LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <RepositoryUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</RepositoryUrl>
   </PropertyGroup>
 
   <PropertyGroup>
     <Version>1.0.20</Version>
     <Title>WilliamSmithE.DynamicJson</Title>
+    <Authors>WilliamSmithE</Authors>
     <Copyright>William Smith 2025</Copyright>
     <PackageProjectUrl>https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson</PackageProjectUrl>
     <PackageIcon>DynamicJsonLogo.png</PackageIcon>
     <PackageReadmeFile>NUGET_README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Description>A simple, lightweight way to work with JSON as dynamic objects or lists, while still giving you type safety when you need it.</Description>
-    <PackageTags>json;dynamic;dynamicjson;dynamic-json;system.text.json;serialization;deserialization;parsing;expandoobject-alternative;object-mapping;linq;json-diff</PackageTags>
+    <Description>Parses JSON into dynamic objects and lists with case-insensitive member access, LINQ support and mapping to typed classes, plus JSON diff, patch, merge and path lookups. Built on System.Text.Json.</Description>
+    <PackageTags>json;dynamic;dynamicjson;dynamic-json;system.text.json;serialization;deserialization;parsing;expandoobject-alternative;object-mapping;linq;json-diff;json-merge</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,50 +1,30 @@
-﻿# DynamicJson  
-A simple, lightweight way to work with JSON as dynamic objects or lists, while still giving you type safety when you need it.
+# DynamicJson
 
-This library converts JSON into `DynamicJsonObject` and `DynamicJsonList`, enabling natural property access while retaining optional mapping to strongly typed POCOs.
+DynamicJson parses JSON into `DynamicJsonObject` and `DynamicJsonList`, so you can read it with ordinary member access (`dynObj.profile.email`), query it with LINQ, and map it to your own classes when you want static types. It is built on System.Text.Json and targets .NET 8, 9 and 10.
 
----
-
-## ✨ Features
-
-- **`json.ToDynamic()` entry point**  
-  Converts JSON into a dynamic object or list that behaves predictably in .NET.
-
-- **Straightforward property access**  
-  Case-insensitive lookups with safe null returns for missing fields.
-
-- **Lists integrate naturally with .NET**  
-  Dynamic lists support indexing and can be used directly with LINQ.
-
-- **Automatic handling of JSON primitives**  
-  Strings, numbers, booleans, and null values map directly to .NET types.
-
-- **Object mapping with `AsType<T>()`**  
-  Converts dynamic objects into POCOs using simple reflection-based mapping.
-
-- **Scalar list conversion (`ToScalarList<T>()`)**  
-  Extracts arrays of primitives (e.g., strings, ints) into strongly typed lists.
-
-- **Object list conversion (`ToList<T>()`)**  
-  Converts arrays of JSON objects into `List<T>` without extra serializer configuration.
-
-- **Clear, predictable error behavior**  
-  Missing properties return null; invalid casts are skipped; index errors throw normally.
-
-- **Round-trip JSON support (`ToJson()`)**  
-  Modified dynamic objects can be serialized back to JSON cleanly.
-
-- **Minimal, focused API surface**  
-  Provides practical capabilities without a large configuration model.
-
-- **Diff / Patch / Merge utilities**  
-  Built-in helpers for comparing and combining JSON structures.
+```
+dotnet add package WilliamSmithE.DynamicJson
+```
 
 ---
 
-## 🚀 Getting Started
+## Features
 
-### Convert JSON → dynamic
+- `json.ToDynamic()` turns a JSON object or array into a dynamic object or list.
+- Member lookups ignore case, and a member the JSON does not have returns `null` instead of throwing.
+- Dynamic lists support indexing, `foreach` and LINQ.
+- JSON strings, numbers, booleans and nulls become `string`, `long` or `double`, `bool` and `null`; ISO 8601 date strings become `DateTime`.
+- `AsType<T>()` maps an object to a class by reflection, `ToList<T>()` maps an array of objects to a `List<T>`, and `ToScalarList<T>()` extracts an array of strings or numbers. None of them needs serializer configuration.
+- Missing members return `null`, a value that `AsType<T>()` or `ToList<T>()` cannot convert throws (`TryAsType<T>()` returns false instead), and a bad index throws `IndexOutOfRangeException`.
+- `ToJson()` writes a modified object back to compact JSON.
+- The only parsing option is an optional key-sanitization delegate.
+- Diff, patch and merge work on whole JSON structures, and `JsonPath` names a location for path-aware diffs and lookups.
+
+---
+
+## Getting Started
+
+### Convert JSON to dynamic
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -73,11 +53,15 @@ string json = @"
 var dynObj = json.ToDynamic();
 ```
 
+`json.ToDynamic()` is the same as `DynamicJson.FromJson(json)`. The root of the JSON must be an object or an array: an object becomes a `DynamicJsonObject`, an array a `DynamicJsonList`. Any other root, such as a number or a string, throws `InvalidOperationException`. An empty or whitespace string throws `ArgumentNullException`, and invalid JSON throws a `JsonException`.
+
+`ToDynamic()` also works on any other .NET object. It serializes the object with System.Text.Json and parses the result, so anonymous types and POCOs become dynamic JSON too.
+
 ---
 
-## 🧭 Dynamic Navigation
+## Dynamic Navigation
 
-### Use a dynamic json object like it was a POCO / CLR object:
+Read a dynamic JSON object the way you would read a POCO:
 
 ```csharp
 Console.WriteLine(dynObj.id);                       // 67
@@ -90,12 +74,9 @@ Console.WriteLine(firstRole.roleName);              // Admin
 
 ---
 
-## 🔑 Key Sanitization (How Property Names Are Matched)
+## Key Sanitization (How Property Names Are Matched)
 
-DynamicJson automatically normalizes all JSON property names using a
-simple rule:
-
-**By default: Only letters and digits are kept. All other characters are removed. (A–Z, a–z, 0–9)**
+DynamicJson normalizes every JSON property name with one rule: by default, only letters and digits are kept and every other character is removed. A letter or digit is whatever `char.IsLetterOrDigit` accepts, so accented and non-Latin letters are kept too.
 
 Examples:
 
@@ -106,43 +87,51 @@ Examples:
 | `order-id`        | `orderid`      |
 | `2024_total$`     | `2024total`    |
 
-This means you can safely access JSON like:
+So this JSON:
 
 ```json
 {
-  "First Name": "Harry"
+  "First Name": "Harry",
   "order-id": 12345
 }
 ```
 
-Using:
+reads as:
+
 ```csharp
-dynObj.FirstName  // "Harry"
-dynObj.OrderId    // 12345
+Console.WriteLine(dynObj.FirstName);  // Harry
+Console.WriteLine(dynObj.OrderId);    // 12345
 ```
+
+The member name you write is compared with the sanitized keys, ignoring case, and is not sanitized itself. `dynObj.order_id` therefore returns `null`, because the stored key is `orderid`. `TryGetValue`, `Properties`, `ToJson()`, JSON paths and diffs all use the same sanitized keys.
+
+Assigning a member that does not exist adds it under the name exactly as written: after `dynObj.last_name = "Potter"`, `ToJson()` writes a `last_name` key.
 
 ### Custom sanitization delegate
 
-You can supply a `Func<char, bool>` delegate that determines which characters are retained:
+A `Func<char, bool>` delegate decides which characters are kept. Pass it to `ToDynamic`, `DynamicJson.FromJson` or the `DynamicJsonObject` constructor, and it applies to every nested object:
 
 ```csharp
 // Example: allow letters, digits, underscores, and hyphens
 Func<char, bool> filter = c =>
     char.IsLetterOrDigit(c) || c == '_' || c == '-';
 
-var obj = new DynamicJsonObject(values, filter);
+var dyn = """{ "first_name": "Harry", "order id": 12345 }""".ToDynamic(filter);
 
-var sanitized = originalKey.Sanitize(filter);
+Console.WriteLine(dyn.first_name);    // Harry
+Console.WriteLine(dyn.orderid);       // 12345
+
+var obj = new DynamicJsonObject(new Dictionary<string, object?> { ["first name"] = "Harry" }, filter);
 ```
 
+`Clone()` parses again with the default sanitizer, so a clone of an object built with a custom filter loses the extra characters (`first_name` becomes `firstname`).
+
 ### De-duplication of keys
-After keys are sanitized, duplicates are automatically renamed by adding a numeric suffix:
 
--> The first occurrence keeps its name, and any additional collisions become key2, key3, and so on. This ensures every property remains unique without losing any values.
-
--> The order of properties is preserved as they appear in the original JSON.
+When two keys sanitize to the same name, the first keeps it and the later ones get a numeric suffix: `key2`, `key3`, and so on. Every value is kept, and the properties stay in the order they appear in the JSON.
 
 Scalar properties:
+
 ```csharp
 using WilliamSmithE.DynamicJson;
 
@@ -167,7 +156,8 @@ Console.WriteLine(dynObj.JobTitle);             // Analyst
 Console.WriteLine(dynObj.JobTitle2);            // Senior Analyst
 ```
 
-Object / Array properties:
+Object and array properties:
+
 ```csharp
 using WilliamSmithE.DynamicJson;
 
@@ -199,29 +189,41 @@ Console.WriteLine(dyn.Credentials2.ApiKey);                                     
 
 ---
 
-## 🔢 Value Type Handling in DynamicJson
+## Value Types
 
-DynamicJson automatically maps JSON primitives and CLR value types into appropriate .NET types.
+JSON values become these .NET types:
 
-### Type Mapping
-
-| JSON / CLR Value      | Resulting DynamicJson Type | Notes |
+| JSON value            | .NET type                  | Notes |
 |-----------------------|----------------------------|-------|
-| `123`                 | `long` or `double`         | Integers stay `long`; large/float-like values become `double`. |
-| `19.99`               | `double` or `decimal`      | Cast inside LINQ projections. |
-| `\"2025-12-13T00:00Z\"` | `DateTime`               | ISO-like strings auto-parse to `DateTime`. |
-| `true` / `false`      | `bool`                     | Direct mapping. |
-| `null`                | `null`                     | Preserved. |
+| `123`                 | `long` or `double`         | Integers stay `long`; integers too large for `long` become `double`. |
+| `19.99`               | `double`                   | Cast inside LINQ projections. |
+| `"2025-12-13T00:00Z"` | `DateTime`                 | ISO 8601 strings become `DateTime`. |
+| `"text"`              | `string`                   | Any string that is not an ISO 8601 date. |
+| `true` / `false`      | `bool`                     | |
+| `null`                | `null`                     | |
+
+Because numbers are `long` or `double`, cast to those types (`(long)x.Qty`, `(double)x.Price`) and use `ToScalarList<long>()` rather than `ToScalarList<int>()`.
+
+Date strings follow System.Text.Json's ISO 8601 rules. A `Z` suffix gives a UTC `DateTime`, an offset such as `+02:00` is converted to the machine's local time, and a date with no time or offset gives a `DateTime` of unspecified kind. `ToJson()` writes the `DateTime` back, not the original string, so `"2025-12-21"` comes back as `"2025-12-21T00:00:00"`.
+
+### Reading values
+
+```csharp
+dynamic dynItem = """{ "Price": 19.99, "Qty": 2 }""".ToDynamic();
+dynamic dynUser = """{ "IsActive": true }""".ToDynamic();
+dynamic dynRecord = """{ "Timestamp": "2025-12-13T00:00Z" }""".ToDynamic();
+
+double price = (double)dynItem.Price;
+long qty = (long)dynItem.Qty;
+bool active = (bool)dynUser.IsActive;
+DateTime ts = (DateTime)dynRecord.Timestamp;
+```
 
 ---
 
-## 🔍 LINQ works naturally
+## LINQ
 
-Use the `.AsEnumerable()` extension method to enable LINQ queries on `DynamicJsonList` objects.
-
-> ⚠️ When using `.AsEnumerable(...)` with a dynamic list, cast the source to `DynamicJsonList` so the lambda can be bound correctly by the C# compiler.
-
-Example:
+Call `.AsEnumerable()` on a `DynamicJsonList` to query it with LINQ. When the list comes from a dynamic expression, cast it to `DynamicJsonList` first; the C# compiler cannot bind a lambda passed to a dynamic receiver.
 
 ```csharp
 string usersJson = """
@@ -262,53 +264,43 @@ var names =
 
 foreach (var name in names)
 {
-    Console.WriteLine(name);
+    Console.WriteLine(name);    // Alice
 }
 ```
 
-⚠️ Casting Disclaimer:  
-    
-Because `AsEnumerable()` produces `IEnumerable<dynamic>`, **LINQ cannot infer the numeric type automatically**.  
-  
-This means:
-  
-- **You must cast inside projection lambdas** (e.g., for `Sum`, `Average`, `Max`, etc.).
-- **Without casting**, LINQ will default to the `int` overload, which can cause runtime binder errors.
+`AsEnumerable()` returns `IEnumerable<dynamic>`, so LINQ cannot tell which numeric type a lambda returns. Cast inside the lambda for `Sum`, `Average`, `Max` and the like: `Sum(x => (long)x.Qty)`. Without the cast, C# picks the `int` overload, and the call fails at run time with a `RuntimeBinderException` because the values are `long`.
 
-### Accessing Value Types
+`AsEnumerable()` returns a JSON `null` element as a plain `object`, not as `null`.
 
-```csharp
-double price = (double)dynItem.Price;
-long qty = (long)dynItem.Qty;
-bool active = (bool)dynUser.IsActive;
-DateTime ts = (DateTime)dynRecord.Timestamp;
-```
+The library adds a `First()` extension method on `IEnumerable<object?>`. It returns the first element that is a `DynamicJsonObject`, or `null` if there is none, and C# picks it over LINQ's `First()` for a `DynamicJsonList` and for the result of `AsEnumerable()`. On a list of numbers or strings it returns `null`; use an index or `ElementAt(0)` to get the first element of any kind. On a dynamic list (`dynObj.profile.roles.First()`), `First()` returns the first object or nested list.
 
-## 🎯 Mapping to POCOs
+---
 
-DynamicJson maps JSON to CLR objects using sanitized, case-insensitive
-property matching.
+## Mapping to POCOs
 
-This means JSON like:
+`AsType<T>()` matches JSON keys to property names after sanitizing both, ignoring case. Either of these:
 
 ```json
 {
   "Created Date": "1/1/2025"
 }
+```
 
-OR
-
+```json
 {
   "Created-Date": "1/1/2025"
 }
 ```
 
-Will correctly populate a POCO property named:
+fills a property named:
 
 ```csharp
 public DateTime CreatedDate { get; set; }
 ```
-### Example POCO Mapping
+
+A value whose type already fits the property is assigned as it is. Anything else goes through `Convert.ChangeType` with the current culture, so `"1/1/2025"` is read with the culture's date format. A value that cannot be converted throws, and so does a nested object or array mapped to a class or list property; map those separately, as the next examples do. `TryAsType<T>(out var result)` returns false instead of throwing. `AsType<T>(filter)` takes an optional sanitization delegate for the property names.
+
+### Example POCO mapping
 
 ```csharp
 public class MyClass
@@ -338,23 +330,27 @@ Console.WriteLine(profile.Department);           // Engineering
 
 ---
 
-## 🔄 Serializing Back to JSON
+## Serializing Back to JSON
 
 ```csharp
 var profileJson = dynObj.profile.ToJson();
 Console.WriteLine(profileJson);
+// {"email":"john@doe.com","department":"Engineering","roles":[{"roleName":"Admin","level":5},{"roleName":"Developer","level":3}]}
 ```
 
-Or via helper:
+Or with the static helper:
 
 ```csharp
 var jsonOut = DynamicJson.ToJson(dynObj.preferences.dashboardWidgets);
 Console.WriteLine(jsonOut);
+// ["inbox","projects","metrics"]
 ```
+
+The output is compact, and keys are written in their sanitized form.
 
 ---
 
-## 🏗️ Working With Lists
+## Working With Lists
 
 ```csharp
 foreach (var role in dynObj.profile.roles)
@@ -362,13 +358,14 @@ foreach (var role in dynObj.profile.roles)
     Console.WriteLine(role.roleName);
 }
 ```
-Indexing into a `DynamicJsonList` behaves like a normal .NET list:
+
+Indexing a `DynamicJsonList` works like indexing a .NET list. The index must be an `int`.
 
 ```csharp
 Console.WriteLine(dynObj.profile.roles[0].roleName); // valid
 
 Console.WriteLine(dynObj.profile.roles[5]); 
-// throws IndexOutOfRangeException with a clear message
+// throws IndexOutOfRangeException: Index 5 is out of range for this DynamicJsonList. Valid indices are 0 to 1.
 ```
 
 Mapping to POCOs:
@@ -383,7 +380,9 @@ public class Role
 var roles = dynObj.profile.roles.ToList<Role>();
 ```
 
-`.ToScalarList()`:
+`ToList<T>()` maps every object in the list with `AsType<T>()` and skips elements that are not objects. A value that cannot be converted throws, as it does in `AsType<T>()`. `Count` gives the number of elements.
+
+`ToScalarList<T>()` keeps only the elements that already are a `T` and converts nothing, so numbers need `long` or `double`:
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -398,7 +397,7 @@ var dyn = """
 """.ToDynamic();
 
 Console.WriteLine((
-    (List<string>)dyn                   // Cast to List<string>
+    (List<string>)dyn                   // Cast the result to List<string>
         .Users                          // Access Users array
         .First()                        // Get the first user
         .Locations                      // Access Locations array
@@ -409,7 +408,7 @@ Console.WriteLine((
 
 ---
 
-## 📘 Example End-to-End
+## Example End-to-End
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -430,7 +429,7 @@ var cartItemsJson = """
 ]
 """;
 
-// 1) Convert JSON → dynamic JSON objects
+// 1) Convert JSON to dynamic JSON objects
 dynamic customer = customerJson.ToDynamic();
 var cartItems = (DynamicJsonList)cartItemsJson.ToDynamic();
 
@@ -453,14 +452,14 @@ var payload = new
     timestamp = DateTime.UtcNow
 };
 
-payload.customer.Name = "James Doe";
+// payload.customer is now a plain Dictionary<string, object?>, so it has no Name member to set.
 
-// 3) Convert entire payload → dynamic JSON
+// 3) Convert entire payload to dynamic JSON
 dynamic dyn = payload.ToDynamic();
 
 // 4) Use the result dynamically
 Console.WriteLine((string)dyn.customer.Name);      // "John Doe"
-Console.WriteLine((double)dyn.total);              // 29.99 → double
+Console.WriteLine((double)dyn.total);              // 29.99 (a double)
 Console.WriteLine((string)dyn.items[0].Sku);       // "ABC123"
 
 // 5) Modify before sending
@@ -477,38 +476,18 @@ Console.WriteLine(finalJson);
 // 29.99
 // ABC123
 // Final outbound JSON:
-// {
-//     "customer": {
-//         "CustomerId": 42,
-//         "Name": "John Doe",
-//         "Email": "billing@john@example.com"
-//     },
-//     "items": [
-//         {
-//             "Sku": "ABC123",
-//             "Qty": 1,
-//             "Price": 19.99
-//         },
-//         {
-//             "Sku": "XYZ789",
-//             "Qty": 2,
-//             "Price": 5
-//         }
-//     ],
-//     "total": 29.99,
-//     "timestamp": "2025-12-13T09:47:40.4611875Z"
-// }
+// {"customer":{"CustomerId":42,"Name":"John Doe","Email":"billing@john@example.com"},"items":[{"Sku":"ABC123","Qty":1,"Price":19.99},{"Sku":"XYZ789","Qty":2,"Price":5}],"total":29.99,"timestamp":"2025-12-13T09:47:40.4611875Z"}
 ```
+
+The timestamp is the time the sample runs.
 
 ---
 
-## 🧩 Dynamic JSON Diff & Patch
+## Diff and Patch
 
-### What “Diff” Does
+### Diff
 
-Diff compares two JSON values and produces a minimal change object that describes only what is different between them. It does not return the entire JSON structure. This represents the smallest set of updates needed to turn the first object into the second.
-
-Example:
+A diff lists only what differs between two JSON values: the changes that turn the first into the second.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -535,17 +514,22 @@ dynamic patch = DynamicJson.DiffDynamic(before, after);
 Console.WriteLine(DynamicJson.ToJson(patch));
 
 // Output:
-// {
-//   "Name": "Alicia",
-//   "Age": 31
-// }
+// {"Name":"Alicia","Age":31}
 ```
 
-### What “Patch” Does
+The rules:
 
-Patch takes an original JSON value and a diff, and applies those changes to produce an updated JSON value.
+- Objects are compared key by key, ignoring the case of keys, and nested objects are diffed recursively.
+- A key that exists only in the second value is added with its whole value.
+- A key missing from the second value appears in the diff with the value `null`, which means "remove".
+- Arrays and other values are compared whole. If anything in an array changed, the diff holds the entire new array.
+- When nothing differs, `Diff` and `DiffDynamic` return `null`. They also return `null` when the second value is `null`, and a key whose value changes to `null` does not appear in the diff at all, so neither change can be told apart from "no change". `DiffWithPaths` (below) reports such a key as `Removed`.
 
-Example:
+`DynamicJson.Diff(original, updated)` returns the same diff as plain dictionaries and lists, and `DynamicJson.ApplyPatch(original, patch)` applies one and returns the result in the same plain form.
+
+### Patch
+
+A patch applies a diff to the original value and returns the updated value.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -575,20 +559,16 @@ dynamic patched = DynamicJson.ApplyPatchDynamic(before, patch);
 Console.WriteLine(DynamicJson.ToJson(patched));
 
 // Output:
-// {
-//   "Name": "Alicia",
-//   "Age": 31,
-//   "City": "Boston"
-// }
+// {"Name":"Alicia","Age":31,"City":"Boston"}
 ```
+
+A `null` in the patch removes that key, a nested object in the patch is applied recursively, and any other value replaces the original value whole. The original is left unchanged.
 
 ---
 
-## 🔀 Merging Dynamic JSON Objects
+## Merging
 
-Merge combines two JSON values into a single result by overlaying the fields from the second value onto the first. Unlike ApplyPatch, which applies only changes, merge performs a full union of both JSON structures.
-
-Example:
+A merge lays the fields of the second value over the first and keeps everything else from both. A patch applies only the changes a diff recorded; a merge takes the union.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -614,33 +594,25 @@ dynamic merged = DynamicJson.MergeDynamic(left, right);
 Console.WriteLine(DynamicJson.ToJson(merged));
 
 // Output:
-// {
-//   "Name": "Alice",
-//   "Address": { "City": "Boston", "Zip": "02110" },
-//   "Tags": ["admin"],
-//   "Age": 30
-// }
+// {"Name":"Alice","Address":{"City":"Boston","Zip":"02110"},"Tags":["admin"],"Age":30}
 
 dynamic mergedConcat = DynamicJson.MergeDynamic(left, right, concatArrays: true);
 
 Console.WriteLine(DynamicJson.ToJson(mergedConcat));
 
 // Output with concatArrays = true:
-// {
-//   "Name": "Alice",
-//   "Address": { "City": "Boston", "Zip": "02110" },
-//   "Tags": ["user", "admin"],
-//   "Age": 30
-// }
+// {"Name":"Alice","Address":{"City":"Boston","Zip":"02110"},"Tags":["user","admin"],"Age":30}
 ```
+
+Nested objects are merged recursively, and keys match ignoring case. A `null` in the second value removes nothing: the first value's entry is kept. For any other pair of values the second one wins, and arrays are replaced unless `concatArrays` is true.
+
+`DynamicJson.Merge(left, right)` returns the merged result as plain dictionaries and lists, without the `concatArrays` option; `DynamicJsonMerge.Merge(left, right, concatArrays)` has it.
 
 ---
 
-## 🧬 Cloning a DynamicJson Object / List
+## Cloning
 
-The `Clone` method creates a deep copy of the `DynamicJson` object, including all nested structures. This allows you to work with a copy of the data without affecting the original object.
-
-Example:
+`Clone()` makes a deep copy of a `DynamicJsonObject` or `DynamicJsonList`, nested values included, so changes to the copy leave the original alone.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -661,24 +633,13 @@ Console.WriteLine(original.Name);   // Output: Alice
 Console.WriteLine(copy.Name);       // Output: Alicia
 ```
 
+`Clone()` serializes the value to JSON and parses it again with the default sanitizer.
+
 ---
 
-## 🛤️ JsonPath: A Structural Identifier for JSON Locations
+## JsonPath
 
-JsonPath is a value type that represents a specific location inside a JSON structure.
-It is designed to be composable, comparable, hashable, and enumerable.
-
-Unlike string paths, a JsonPath is:
-
-- Built structurally
-
-- Compared structurally
-
-- Safe to use as a dictionary key
-
-- Independent of any particular JSON instance
-
-Example:
+`JsonPath` is a value type naming one location inside a JSON structure, such as `/user/orders[0]/id`. You build it from property and index segments, two paths with the same segments are equal and hash alike (so a path works as a dictionary key), and it holds no reference to any JSON value.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -717,13 +678,13 @@ foreach (var seg in p1)
 // id
 ```
 
-### DynamicJson Path Aware Diffs
+`IsRoot`, `Length` and the indexer (`p1[0]`) give the segments too. `Property` throws `ArgumentException` for a null or empty name, and `Index` throws `ArgumentOutOfRangeException` for a negative index.
 
-Path-aware diffs allow you to compare two JSON-like values and receive a precise list of changes, each annotated with the exact location where it occurred. 
+A path into a root array prints without a leading slash (`JsonPath.Root.Index(0).Property("name")` prints `[0]/name`), and `JsonPath.Parse` rejects that form. Write `/[0]/name` to parse it.
 
-Instead of a single “changed” result, the diff reports added, removed, and modified values along with their JsonPath. This makes JSON mutations explicit, inspectable, and easy to log or reason about, while preserving the library’s existing diff semantics.
+### Path-aware diffs
 
-Example:
+`DynamicJson.DiffWithPaths` compares two values and returns one entry per change, each with the path where it happened and whether the value was added, removed or modified. It follows the same rules as `Diff`, so a changed array is one entry for the whole array.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -765,19 +726,18 @@ foreach (var c in changes)
 }
 
 // Expected output:
-// Modified / user / orders | [{ "id":10,"price":19.99},{ "id":11,"price":5}] -> [{"id":10,"price":24.99},{ "id":11,"price":5}]
-// Removed / user / address | { "zip":"94105"} -> null
-// Added / metadata | null-> { "lastUpdated":"2025-12-21T00:00:00"}
+// Modified  /user/orders | [{"id":10,"price":19.99},{"id":11,"price":5}] -> [{"id":10,"price":24.99},{"id":11,"price":5}]
+// Removed   /user/address | {"zip":"94105"} -> null
+// Added     /metadata | null -> {"lastUpdated":"2025-12-21T00:00:00"}
 ```
 
-### DynamicJson Path Navigation
+Each `DiffEntry` has `Path`, `OldValue`, `NewValue` and `Kind` (`Added`, `Removed` or `Modified`). The values are plain dictionaries, lists and primitives, and the paths use the sanitized keys. `lastUpdated` shows the date conversion described under Value Types: `"2025-12-21"` was read as a `DateTime`.
 
-JsonPathNavigation bridges JsonPath and the DynamicJson model. It lets you take a path and resolve it against a dynamic JSON value to retrieve whatever exists at that location. 
+### Path navigation
 
-- The result may be a primitive, an object, or an array, and it is returned in the same raw form used throughout DynamicJson. 
-- This makes paths produced by diffs or diagnostics immediately usable, allowing you to locate and inspect the exact data they refer to without re-parsing or manual navigation.
+`JsonPathNavigation` looks a path up in a dynamic JSON value. `TryGetAtPath` returns false when the path does not resolve, and `GetAtPath` throws `KeyNotFoundException`. Both take a `JsonPath` or a path string, so a path from a diff or a log can be read back directly.
 
-Example:
+The value comes back in plain form: a primitive, a `Dictionary<string, object?>` or a `List<object?>`, not a dynamic wrapper. Property names in the path are matched against the sanitized keys, ignoring case, so `/order-id` does not resolve and `/orderid` does.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -835,17 +795,14 @@ Console.WriteLine(DynamicJson.ToJson(orders));                                  
 
 var pathToUser = JsonPath.Root.Property("user");
 
-var user = JsonPathNavigation.GetAtPath(json, pathToUser);                          // {"orders":[{"id":10,"price":19.99},{"id":11,"price":5}]}
+var user = JsonPathNavigation.GetAtPath(json, pathToUser);
 
-Console.WriteLine(DynamicJson.ToJson(user));
+Console.WriteLine(DynamicJson.ToJson(user));                                        // {"orders":[{"id":10,"price":19.99},{"id":11,"price":5}]}
 ```
 
-### Parsing Paths From Strings
+### Parsing paths from strings
 
-JsonPath.Parse converts a canonical path string into a JsonPath instance that behaves exactly like one built fluently in code. 
-
-- Parsed paths can be compared, enumerated, and resolved against DynamicJson values, making them useful for replaying or inspecting paths captured in logs, diagnostics, or configuration. 
-- The parser is intentionally strict and fails fast on invalid or ambiguous input to keep path handling predictable.
+`JsonPath.Parse` turns a path string such as `/user/orders[0]/price` into a `JsonPath` equal to the same path built in code. The string must start with `/`, and an index must be a non-negative integer in brackets; anything else throws `FormatException`. `TryParse` returns false instead, and the `JsonPath` it gives back on failure is unusable: reading `IsRoot`, `Length` or `ToString()` on it throws `NullReferenceException`.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -902,15 +859,9 @@ if (!JsonPath.TryParse("/user/order[]", out _))                 // Invalid
 }
 ```
 
-### Validating Paths Against DynamicJson
+### Validating paths
 
-IsValidFor provides a simple way to check whether a JSON path can be safely used against a specific DynamicJson value. 
-
-- It verifies not only that a path is syntactically valid, but also that it actually resolves within the given JSON structure. 
-- Useful when paths come from user input, configuration, or diagnostics and you need to ensure they refer to real data before attempting to read or act on them. 
-- By combining parsing and resolution into a single non-throwing check, IsValidFor keeps path validation explicit and predictable without altering the underlying JSON or path semantics.
-
-Example:
+`JsonPathValidation.IsValidFor` returns true only when a path parses and resolves in the given value, and it never throws. Use it to check a path from user input, configuration or a log before reading with it.
 
 ```csharp
 using WilliamSmithE.DynamicJson;
@@ -947,6 +898,26 @@ if (!JsonPathValidation.IsValidFor(json, "/user/orders[2]/price"))
 
 ---
 
-## 📄 License
+## Other Members
 
-MIT License. See `LICENSE` file for details.
+The sections above cover the common calls. These public members are also available:
+
+| Member | What it does |
+|--------|--------------|
+| `DynamicJson.FromJson(json, filter)` | Same as `json.ToDynamic(filter)`. |
+| `DynamicJson.ToJson(value)` | Serializes a dynamic value, or any other value, to compact JSON. |
+| `DynamicJsonObject.Properties` | The sanitized keys and their values, as a read-only dictionary. |
+| `DynamicJsonObject.TryGetValue(name, out value)` | Looks up a sanitized key, ignoring case. |
+| `DynamicJsonObject.KeyValuePairsAsString` | One `Key: Value` line per property, not recursive. |
+| `DynamicJsonObject.ToRawObject()` | The object as a `Dictionary<string, object?>`, nested values included. |
+| `DynamicJsonList.ToRawArray()` | The list as a `List<object?>`, nested values included. |
+| `Raw.ToRawObject(value)` | Either of the two above, depending on the value; other values come back unchanged. |
+| `DynamicJsonObjectCastingExtensions.AsType<T>(value)` | `AsType<T>()` for a value typed `object`: maps a `DynamicJsonObject`, returns a `T` as it is, and returns `null` for anything else. |
+| `JsonElementExtensions.AsDynamic(element)` | Converts a System.Text.Json `JsonElement` (or a `List<JsonElement>`) to dynamic JSON. |
+| `DynamicJsonDiff`, `DynamicJsonMerge`, `DynamicJsonPathDiff` | The classes behind `DynamicJson.Diff`, `Merge` and `DiffWithPaths`. |
+
+---
+
+## License
+
+MIT License. See [LICENSE.txt](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/blob/main/LICENSE.txt) for details.

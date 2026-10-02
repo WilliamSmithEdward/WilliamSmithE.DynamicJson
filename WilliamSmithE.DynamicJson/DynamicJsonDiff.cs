@@ -73,6 +73,11 @@ namespace WilliamSmithE.DynamicJson
         /// When values are not both dictionaries, any difference results in a
         /// patch value that fully replaces the original.
         /// </para>
+        /// <para>
+        /// A change to <c>null</c> produces no patch entry, because <c>null</c> also
+        /// means "no difference": a key whose value becomes <c>null</c> is omitted, and
+        /// the method returns <c>null</c> when <paramref name="updated"/> is <c>null</c>.
+        /// </para>
         /// </remarks>
         public static object? Diff(object? original, object? updated)
         {

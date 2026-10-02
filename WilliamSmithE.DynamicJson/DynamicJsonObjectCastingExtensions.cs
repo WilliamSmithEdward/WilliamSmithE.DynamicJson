@@ -45,7 +45,9 @@ namespace WilliamSmithE.DynamicJson
         /// If a value is <c>null</c>, the corresponding property is explicitly set to <c>null</c>.
         /// For non-null values, the method attempts assignment using either direct type compatibility
         /// or <see cref="Convert.ChangeType(object?, Type)"/> when a conversion is required.
-        /// Conversion errors are allowed to propagate to the caller.
+        /// Conversion errors are allowed to propagate to the caller; a nested
+        /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/> value mapped to a
+        /// property of another type throws <see cref="InvalidCastException"/>.
         /// </para>
         /// </remarks>
         public static T? AsType<T>(this DynamicJsonObject source, Func<char, bool>? sanitizationFilter = null)
@@ -166,6 +168,11 @@ namespace WilliamSmithE.DynamicJson
         /// <param name="value">
         /// The value to map. May be a <see cref="DynamicJsonObject"/> or an instance of
         /// <typeparamref name="T"/>.
+        /// </param>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate that determines which characters are retained when sanitizing
+        /// target property names for comparison with JSON keys. If <c>null</c>, the default
+        /// alphanumeric sanitizer is applied.
         /// </param>
         /// <returns>
         /// If <paramref name="value"/> is a <see cref="DynamicJsonObject"/>, a new instance of

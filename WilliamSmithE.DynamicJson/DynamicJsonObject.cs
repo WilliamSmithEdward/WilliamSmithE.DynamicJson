@@ -25,6 +25,15 @@ namespace WilliamSmithE.DynamicJson
     /// suitable for serialization.
     /// </para>
     /// </remarks>
+    /// <param name="values">
+    /// The property names and values. Each name is sanitized; when two names sanitize to the
+    /// same key, the later one gets a numeric suffix (<c>Name</c>, <c>Name2</c>, <c>Name3</c>).
+    /// Must not be <c>null</c>, or <see cref="ArgumentNullException"/> is thrown.
+    /// </param>
+    /// <param name="sanitizationFilter">
+    /// An optional predicate that decides which characters of a property name are kept.
+    /// If <c>null</c>, letters and digits (<see cref="char.IsLetterOrDigit(char)"/>) are kept.
+    /// </param>
     public class DynamicJsonObject(IDictionary<string, object?> values, Func<char, bool>? sanitizationFilter = null) : DynamicObject
     {
         /// <summary>
@@ -50,7 +59,7 @@ namespace WilliamSmithE.DynamicJson
             ?? throw new InvalidOperationException("Backing store is not a dictionary.");
 
         /// <summary>
-        /// Gets a newline-separated list of this object's key–value pairs, with each
+        /// Gets a newline-separated list of this object's key/value pairs, with each
         /// entry formatted as <c>Key: Value</c>.
         /// </summary>
         /// <value>
@@ -67,8 +76,8 @@ namespace WilliamSmithE.DynamicJson
             string.Join(Environment.NewLine, Properties.Select(kvp => $"{kvp.Key}: {kvp.Value}"));
 
         /// <summary>
-        /// Attempts to retrieve a dynamic member value using a sanitized and
-        /// case-insensitive lookup against this object's property dictionary.
+        /// Attempts to retrieve a dynamic member value using a case-insensitive
+        /// lookup against this object's sanitized property keys.
         /// </summary>
         /// <param name="binder">
         /// Provides information about the requested member, including the name
@@ -83,10 +92,10 @@ namespace WilliamSmithE.DynamicJson
         /// was handled, even when no matching key exists.
         /// </returns>
         /// <remarks>
-        /// The requested member name is sanitized to match the canonical key
-        /// format used internally (letters and digits only). The lookup is
-        /// performed in a case-insensitive manner. Missing members do not throw;
-        /// they return <c>null</c> to preserve safe dynamic behavior.
+        /// The requested member name is compared, ignoring case, with the keys as
+        /// they were sanitized when this object was built. The member name itself
+        /// is not sanitized, so <c>obj.first_name</c> does not find the key
+        /// <c>firstname</c>. Missing members do not throw; they return <c>null</c>.
         /// </remarks>
         public override bool TryGetMember(GetMemberBinder binder, out object? result)
         {
@@ -108,8 +117,7 @@ namespace WilliamSmithE.DynamicJson
         }
 
         /// <summary>
-        /// Attempts to assign a value to a dynamic member using a sanitized key
-        /// and case-insensitive storage.
+        /// Assigns a value to a dynamic member, matching existing keys case-insensitively.
         /// </summary>
         /// <param name="binder">
         /// Contains information about the member being assigned, including the
@@ -122,10 +130,9 @@ namespace WilliamSmithE.DynamicJson
         /// Always returns <c>true</c>, indicating the assignment was handled.
         /// </returns>
         /// <remarks>
-        /// The member name is sanitized before being stored, ensuring that all keys
-        /// conform to the canonical format used internally (letters and digits only).
-        /// Dynamic assignment never throws due to missing members; new entries are
-        /// added to the underlying dictionary as needed.
+        /// The member name is not sanitized: an existing key that matches it, ignoring
+        /// case, is overwritten, and otherwise a new key is added exactly as written.
+        /// Dynamic assignment never throws due to missing members.
         /// </remarks>
         public override bool TrySetMember(SetMemberBinder binder, object? value)
         {
@@ -144,6 +151,11 @@ namespace WilliamSmithE.DynamicJson
         /// The target class type to map into. Must have a public parameterless
         /// constructor.
         /// </typeparam>
+        /// <param name="sanitizationFilter">
+        /// An optional predicate that decides which characters of each target property
+        /// name are kept before it is compared with the keys. If <c>null</c>, letters and
+        /// digits are kept.
+        /// </param>
         /// <returns>
         /// A new instance of <typeparamref name="T"/> with any matching writable
         /// properties populated from this object's values. This method never
@@ -163,8 +175,10 @@ namespace WilliamSmithE.DynamicJson
         /// corresponding property is explicitly set to <c>null</c>.
         /// </para>
         /// <para>
-        /// Conversion errors are allowed to propagate to the caller. For a safe,
-        /// exception-free variant, use a corresponding TryAsType method instead.
+        /// Conversion errors are allowed to propagate to the caller. A nested
+        /// <see cref="DynamicJsonObject"/> or <see cref="DynamicJsonList"/> value mapped
+        /// to a property of another type throws <see cref="InvalidCastException"/>.
+        /// For an exception-free variant, use <see cref="TryAsType{T}(out T)"/>.
         /// </para>
         /// </remarks>
         public T? AsType<T>(Func<char, bool>? sanitizationFilter = null) where T : class, new()
@@ -296,7 +310,8 @@ namespace WilliamSmithE.DynamicJson
         /// property name from the underlying JSON object.
         /// </summary>
         /// <param name="name">
-        /// The property name to look up. Comparison is case-insensitive.
+        /// The property name to look up, in its sanitized form (<c>orderid</c> for the
+        /// JSON key <c>order-id</c>). Comparison is case-insensitive.
         /// </param>
         /// <param name="value">
         /// When this method returns, contains the value associated with
@@ -310,6 +325,13 @@ namespace WilliamSmithE.DynamicJson
             return values.TryGetValue(name, out value);
         }
 
+        /// <summary>
+        /// Serializes this <see cref="DynamicJsonObject"/> to a JSON string.
+        /// </summary>
+        /// <returns>
+        /// Compact JSON produced from <see cref="ToRawObject"/> with
+        /// <see cref="System.Text.Json.JsonSerializer"/>, using the sanitized keys.
+        /// </returns>
         public string ToJson()
         {
             return JsonSerializer.Serialize(ToRawObject());
@@ -319,25 +341,24 @@ namespace WilliamSmithE.DynamicJson
         /// Creates a deep copy of this <see cref="DynamicJsonObject"/>.
         /// </summary>
         /// <returns>A new instance of <see cref="DynamicJsonObject"/> that is a copy of the original.</returns>
+        /// <remarks>
+        /// The copy is made by serializing to JSON and parsing again with the default
+        /// sanitizer, so a custom sanitization filter used to build this object is not
+        /// applied to the copy.
+        /// </remarks>
         public DynamicJsonObject Clone() => DynamicJson.FromJson(ToJson());
 
         /// <summary>
-        /// Initializes the internal value dictionary by sanitizing keys,
-        /// ensuring case-insensitive lookup, and automatically resolving
+        /// The internal value dictionary, built from the constructor's <c>values</c>
+        /// by sanitizing keys, ensuring case-insensitive lookup, and resolving
         /// duplicate keys by appending a numeric suffix.
         /// </summary>
         /// <remarks>
         /// Each key in the source dictionary is sanitized. If the sanitized
         /// key already exists, a numeric counter is appended to create a
         /// unique key (e.g., <c>Name</c>, <c>Name2</c>, <c>Name3</c>).
+        /// Throws <see cref="ArgumentNullException"/> when <c>values</c> is <c>null</c>.
         /// </remarks>
-        /// <param name="values">
-        /// The source dictionary used to build the internal value map.
-        /// Must not be <c>null</c>.
-        /// </param>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="values"/> is <c>null</c>.
-        /// </exception>
         private readonly Dictionary<string, object?> values =
             values?.Aggregate(
                 new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase),

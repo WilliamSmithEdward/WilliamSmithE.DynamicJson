@@ -80,6 +80,11 @@ namespace WilliamSmithE.DynamicJson
         /// </description></item>
         /// </list>
         /// <para>
+        /// One difference from <see cref="DynamicJsonDiff.Diff(object?, object?)"/>: a value
+        /// that changes to <c>null</c> is reported here as <see cref="DiffKind.Removed"/>,
+        /// while the patch omits it.
+        /// </para>
+        /// <para>
         /// The returned paths are observational and are not stored on the dynamic
         /// JSON values themselves.
         /// </para>

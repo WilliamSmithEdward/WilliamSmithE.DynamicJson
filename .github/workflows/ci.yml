@@ -1,0 +1,87 @@
+name: CI
+
+# The library built for every target framework and packed as nuget.org would
+# receive it. There are no tests yet.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  build:
+    name: Build and pack the NuGet package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      # packages.lock.json is the record of what the package depends on;
+      # locked mode fails instead of resolving anything it does not name.
+      - name: Restore from the lock file
+        run: dotnet restore WilliamSmithE.DynamicJson.slnx --locked-mode
+
+      # Builds net8.0, net9.0 and net10.0; a missing XML comment is a warning,
+      # so this also fails on an undocumented public member.
+      - name: Build Release with warnings as errors
+        run: dotnet build WilliamSmithE.DynamicJson.slnx --no-restore -c Release -warnaserror
+
+      - name: Pack
+        run: dotnet pack WilliamSmithE.DynamicJson.slnx --no-build -c Release -o dist
+
+      # nuget.org shows the README and the icon, and IntelliSense reads the
+      # XML docs: a package without any of them is a broken release.
+      - name: Check the package holds each framework's dll and XML docs, the README and the icon
+        run: |
+          set -- dist/*.nupkg
+          [ "$#" -eq 1 ] && [ -f "$1" ] || { echo "want exactly one .nupkg, found: $*"; exit 1; }
+          unzip -Z1 "$1" > contents.txt
+          cat contents.txt
+          for tfm in net8.0 net9.0 net10.0; do
+            for ext in dll xml; do
+              want="lib/$tfm/WilliamSmithE.DynamicJson.$ext"
+              grep -qxF "$want" contents.txt || { echo "missing from the package: $want"; exit 1; }
+            done
+          done
+          for want in NUGET_README.md DynamicJsonLogo.png; do
+            grep -qxF "$want" contents.txt || { echo "missing from the package: $want"; exit 1; }
+          done
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nupkg
+          path: dist/
+          if-no-files-found: error
+
+  # The one check the main ruleset requires. It fails unless every job above
+  # passed, a skipped one included.
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs: [build]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check every CI job passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for result in $RESULTS; do
+            [ "$result" = success ] || exit 1
+          done

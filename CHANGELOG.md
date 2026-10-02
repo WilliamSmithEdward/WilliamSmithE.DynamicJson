@@ -9,6 +9,13 @@ with the date nuget.org records for each upload. Neither nuget.org nor the
 README carried release notes for them. Versions 1.0.1 to 1.0.19 are
 unlisted on nuget.org.
 
+## [1.0.21] - 2026-10-01
+
+* No change to the library's behaviour.
+* The README, shown on nuget.org, is corrected against the code: every example compiles and prints what it says it prints, and it documents member-name sanitization, date handling, diff, patch and merge rules, path formatting and the API it never mentioned.
+* The package now ships its XML documentation, so IntelliSense shows it, and several doc comments that contradicted the code are corrected.
+* The package is built in CI from the tagged commit, scanned for vulnerabilities and malware, and published through nuget.org trusted publishing. The GitHub release carries the package's signed build provenance, which `gh attestation verify` checks against the release's copy.
+
 ## [1.0.20] - 2025-12-22
 
 No notes were recorded.

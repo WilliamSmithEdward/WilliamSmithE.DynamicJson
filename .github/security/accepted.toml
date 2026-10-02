@@ -8,3 +8,26 @@
 #
 # Add an entry only with a reason a reviewer can check. Fixing the code
 # is the better answer wherever there is one.
+
+[[notice]]
+tool = "Semgrep"
+id = "Syntax error"
+contains = "DynamicJsonObject.cs"
+reason = """
+Semgrep 1.178.0's C# parser does not accept C# 12 primary constructors, so
+it stops at the class declaration `class DynamicJsonObject(...)`, which is
+valid C# that the compiler builds for net8.0, net9.0 and net10.0. Semgrep
+may check less of this file as a result; CodeQL's C# analysis, extracted
+from the real build, covers all of it. Rewriting the constructor only to
+suit the parser would change library code for no behaviour reason.
+"""
+
+[[notice]]
+tool = "Semgrep"
+id = "Syntax error"
+contains = "DynamicJsonList.cs"
+reason = """
+The same C# 12 primary-constructor limitation as DynamicJsonObject.cs, at
+`class DynamicJsonList(IList<object?> items)`. CodeQL's C# analysis covers
+the file.
+"""

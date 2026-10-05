@@ -47,12 +47,10 @@ net8.0, net9.0 and net10.0. What an agent working here must not break:
   trusted publishing: nuget.org's policy is bound to `publish.yml` and the
   `nuget` environment, so both keep their names, and no API key is stored
   anywhere.
-- **Two READMEs that say the same things.** `README.md` is the GitHub page
-  and `WilliamSmithE.DynamicJson/NUGET_README.md` is packed as the nuget.org
-  readme. Change both in the same pull request. Both include the same badge block, with the Scorecard image served
-  by img.shields.io so NuGet can render it. Keep image URLs absolute and
-  use NuGet-supported hosts. Links in both are absolute, since
-  nuget.org does not resolve relative ones.
+- **One README for GitHub and NuGet.** The root `README.md` is packed
+  directly as the nuget.org readme. Keep links and image URLs absolute,
+  use NuGet-supported image hosts, and serve the Scorecard badge through
+  `img.shields.io`. Do not add a separate package README.
 - **The lock file.** Restores run with `--locked-mode` against
   `WilliamSmithE.DynamicJson/packages.lock.json`. A new or changed package
   reference is restored without it once, and the updated lock file committed
@@ -60,5 +58,5 @@ net8.0, net9.0 and net10.0. What an agent working here must not break:
 - **No tests yet.** CI checks that the library builds for all three target
   frameworks with no warnings, so every public member needs an XML doc
   comment, and that the package holds each framework's dll and XML docs,
-  `NUGET_README.md` and the icon. The README samples are the only examples:
+  `README.md` and the icon. The README samples are the only examples:
   compile and run a changed sample against the library before committing it.

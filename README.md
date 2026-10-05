@@ -5,7 +5,7 @@
 [![CI](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/actions/workflows/ci.yml)
 [![Security](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/actions/workflows/security.yml)
 [![Malware scan](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/actions/workflows/malware-scan.yml/badge.svg?branch=main)](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/actions/workflows/malware-scan.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/badge)](https://scorecard.dev/viewer/?uri=github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson)](https://scorecard.dev/viewer/?uri=github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/WilliamSmithEdward/WilliamSmithE.DynamicJson/blob/main/LICENSE.txt)
 
 DynamicJson parses JSON into `DynamicJsonObject` and `DynamicJsonList`, so you can read it with ordinary member access (`dynObj.profile.email`), query it with LINQ, and map it to your own classes when you want static types. It is built on System.Text.Json and targets .NET 8, 9 and 10.

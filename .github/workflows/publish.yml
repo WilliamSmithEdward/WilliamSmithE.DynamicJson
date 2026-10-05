@@ -88,6 +88,8 @@ jobs:
         run: |
           set -- dist/*.nupkg
           [ "$#" -eq 1 ] && [ "$1" = "dist/WilliamSmithE.DynamicJson.$VERSION.nupkg" ] || { echo "want dist/WilliamSmithE.DynamicJson.$VERSION.nupkg alone, found: $*"; exit 1; }
+          unzip -p "$1" README.md > packaged-readme.md
+          cmp README.md packaged-readme.md
           unzip -Z1 "$1" > contents.txt
           cat contents.txt
           for tfm in net8.0 net9.0 net10.0; do
@@ -96,7 +98,7 @@ jobs:
               grep -qxF "$want" contents.txt || { echo "missing from the package: $want"; exit 1; }
             done
           done
-          for want in NUGET_README.md DynamicJsonLogo.png; do
+          for want in README.md DynamicJsonLogo.png; do
             grep -qxF "$want" contents.txt || { echo "missing from the package: $want"; exit 1; }
           done
 

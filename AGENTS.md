@@ -49,9 +49,9 @@ net8.0, net9.0 and net10.0. What an agent working here must not break:
   anywhere.
 - **Two READMEs that say the same things.** `README.md` is the GitHub page
   and `WilliamSmithE.DynamicJson/NUGET_README.md` is packed as the nuget.org
-  readme. Change both in the same pull request. They differ only in the
-  badge block, which `NUGET_README.md` leaves out because nuget.org does not
-  render images from api.scorecard.dev. Links in both are absolute, since
+  readme. Change both in the same pull request. Both include the same badge block, with the Scorecard image served
+  by img.shields.io so NuGet can render it. Keep image URLs absolute and
+  use NuGet-supported hosts. Links in both are absolute, since
   nuget.org does not resolve relative ones.
 - **The lock file.** Restores run with `--locked-mode` against
   `WilliamSmithE.DynamicJson/packages.lock.json`. A new or changed package

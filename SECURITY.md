@@ -123,8 +123,8 @@ roll forward to a newer feature band, so CI builds with the newest .NET 10
 SDK. ClamAV's signatures change too often to pin, so freshclam fetches and
 verifies them on every run.
 
-Dependabot proposes updates to the GitHub Actions, the Semgrep and ClamAV
-images, the hash-locked files in `.github/requirements`, the NuGet packages
+Dependabot proposes updates to the GitHub Actions, the ClamAV
+image, the hash-locked files in `.github/requirements`, the NuGet packages
 and the .NET SDK in `global.json` once a version is a week old, and at once
 for a security advisory. The Update YARA rules workflow proposes new YARA
 pins in `.github/security/yara.json` each week. A minor or patch update,
